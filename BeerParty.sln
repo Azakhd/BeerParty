@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeerParty.BL", "BL\BeerPart
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeerParty.Data", "BeerParty.Data\BeerParty.Data.csproj", "{3C45FB93-6498-4099-9545-0F78E04DC862}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeerParty.Web", "BeerParty.Web\BeerParty.Web.csproj", "{0AC02D98-6566-499A-BEEE-69C7267C8E05}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BeerParty.Web", "BeerParty.Web\BeerParty.Web.csproj", "{0AC02D98-6566-499A-BEEE-69C7267C8E05}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeerParty.Web.Interface", "BeerParty.Web.Interface\BeerParty.Web.Interface.csproj", "{853172B0-4B88-46ED-B95B-6BED20A353BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{0AC02D98-6566-499A-BEEE-69C7267C8E05}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0AC02D98-6566-499A-BEEE-69C7267C8E05}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0AC02D98-6566-499A-BEEE-69C7267C8E05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{853172B0-4B88-46ED-B95B-6BED20A353BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{853172B0-4B88-46ED-B95B-6BED20A353BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{853172B0-4B88-46ED-B95B-6BED20A353BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{853172B0-4B88-46ED-B95B-6BED20A353BE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
