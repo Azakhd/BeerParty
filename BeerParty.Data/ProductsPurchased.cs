@@ -8,5 +8,6 @@ namespace BeerParty.Data
 {
     internal class ProductsPurchased
     {
+
     }
 }
