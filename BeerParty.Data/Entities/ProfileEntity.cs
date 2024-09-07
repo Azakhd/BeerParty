@@ -1,4 +1,4 @@
-﻿namespace BeerParty.Data
+﻿namespace BeerParty.Data.Entities
 {
     public class Profile
     {

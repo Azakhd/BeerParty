@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BeerParty.Data
+namespace BeerParty.Data.Entities
 {
-    internal class ProductsPurchased
+    internal class Level
     {
-
     }
 }

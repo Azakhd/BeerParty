@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 
-namespace BeerParty.Data
+using Microsoft.EntityFrameworkCore.Scaffolding.Metadata;
+
+namespace BeerParty.Data.Entities
 {
     public class User
     {
-        public int UserId { get; set; }
+        public long UserId { get; set; }
         public string Username { get; set; }
         public string Email { get; set; }
         public string PasswordHash { get; set; }
@@ -18,5 +16,7 @@ namespace BeerParty.Data
         public Profile Profile { get; set; }
 
     }
+
+   
 }
 

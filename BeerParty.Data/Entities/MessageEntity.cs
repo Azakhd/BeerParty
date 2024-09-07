@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BeerParty.Data
+namespace BeerParty.Data.Entities
 {
-    internal class Message
+    public class Message
     {
         public int MessageId { get; set; }
         public int SenderId { get; set; }

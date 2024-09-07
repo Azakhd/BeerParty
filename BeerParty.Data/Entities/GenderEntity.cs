@@ -1,7 +1,7 @@
 ﻿using System;
 
 
-namespace BeerParty.Data
+namespace BeerParty.Data.Entities
 {
     public enum Gender
     {
