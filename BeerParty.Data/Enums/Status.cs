@@ -4,9 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BeerParty.Data.Entities
+namespace BeerParty.Data.Enums
 {
-    internal class Product
+    public enum Status
     {
+        online = 1,
+        offline = 2,
+        Shipper = 3
     }
 }

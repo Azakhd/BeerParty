@@ -4,10 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BeerParty.Data.Entities
+namespace BeerParty.Data.Enums
 {
-    internal class ProductsPurchased
+    public enum Role
     {
-
+        Admin,
+        Moderator,
+        User
     }
 }

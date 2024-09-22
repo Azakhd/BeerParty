@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace BeerParty.Data.Entities
 {
-    internal class Level
+    public abstract class BaseEntity
     {
+       public long Id { get; set; }
     }
 }
