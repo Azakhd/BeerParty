@@ -10,12 +10,16 @@ namespace BeerParty.Data
 {
     public class ApplicationContext : DbContext
     {
-        public DbSet<User> Users { get; set; }
+       
 
 
         public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options)
         {
         }
+        public DbSet<User> Users { get; set; }
+        public DbSet<Friend> Friends { get; set; }
+        public DbSet<UserInterest> Interests { get; set; }
+        public DbSet<Profile> Profiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,6 +37,17 @@ namespace BeerParty.Data
                 .HasOne(ui => ui.Interest) // Указание на интерес
                 .WithMany(i => i.UserInterests) // У интереса может быть много пользователей
                 .HasForeignKey(ui => ui.InterestId); // Указываем внешний ключ
+            modelBuilder.Entity<Friend>()
+              .HasOne(f => f.User) // Пользователь, который добавил друга
+              .WithMany() // У пользователя может быть много друзей
+              .HasForeignKey(f => f.UserId)
+              .OnDelete(DeleteBehavior.Cascade); // Если пользователь удален, то и все его связи
+
+            modelBuilder.Entity<Friend>()
+                .HasOne(f => f.FriendUser) // Указываем на другого пользователя
+                .WithMany() // У друга также может быть много друзей
+                .HasForeignKey(f => f.FriendId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<User>()// Настройка уникального индекса для Email
                 .HasIndex(u => u.Email)
@@ -54,17 +69,7 @@ namespace BeerParty.Data
             .HasForeignKey<Profile>(p => p.UserId) // Указываем внешний ключ
             .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Friend>()
-              .HasOne(f => f.User) // Пользователь, который добавил друга
-              .WithMany() // У пользователя может быть много друзей
-              .HasForeignKey(f => f.UserId)
-              .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Friend>()
-                .HasOne(f => f.FriendUser) // Указываем на другого пользователя
-                .WithMany() // У друга также может быть много друзей
-                .HasForeignKey(f => f.FriendId)
-                .OnDelete(DeleteBehavior.Restrict);
+     
         }
     }
 }

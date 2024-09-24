@@ -50,7 +50,7 @@ namespace BeerParty.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Friend");
+                    b.ToTable("Friends");
                 });
 
             modelBuilder.Entity("BeerParty.Data.Entities.Interest", b =>
@@ -117,7 +117,7 @@ namespace BeerParty.Data.Migrations
                     b.HasIndex("UserId1")
                         .IsUnique();
 
-                    b.ToTable("Profile");
+                    b.ToTable("Profiles");
                 });
 
             modelBuilder.Entity("BeerParty.Data.Entities.User", b =>
@@ -169,7 +169,7 @@ namespace BeerParty.Data.Migrations
 
                     b.HasIndex("InterestId");
 
-                    b.ToTable("UserInterest");
+                    b.ToTable("Interests");
                 });
 
             modelBuilder.Entity("BeerParty.Data.Entities.Friend", b =>
@@ -177,7 +177,7 @@ namespace BeerParty.Data.Migrations
                     b.HasOne("BeerParty.Data.Entities.User", "FriendUser")
                         .WithMany()
                         .HasForeignKey("FriendId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("BeerParty.Data.Entities.Profile", null)
@@ -187,7 +187,7 @@ namespace BeerParty.Data.Migrations
                     b.HasOne("BeerParty.Data.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("FriendUser");

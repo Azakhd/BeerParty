@@ -9,7 +9,7 @@ namespace BeerParty.Data.Enums
     public enum Status
     {
         online = 1,
-        offline = 2,
-        Shipper = 3
+        offline = 2
+        
     }
 }
