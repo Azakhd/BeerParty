@@ -10,6 +10,5 @@ namespace BeerParty.Data.Enums
     {
         online = 1,
         offline = 2
-        
     }
 }

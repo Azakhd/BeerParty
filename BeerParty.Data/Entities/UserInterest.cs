@@ -9,9 +9,9 @@ namespace BeerParty.Data.Entities
     public class UserInterest
     {
         public long UserId { get; set; }
-        public User ?User { get; set; } // Пользователь, который имеет интерес
+        public User ?User { get; set; } 
 
         public long InterestId { get; set; }
-        public Interest ?Interest { get; set; } // Интерес пользователя
+        public Interest ?Interest { get; set; } 
     }
 }
