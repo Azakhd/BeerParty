@@ -18,6 +18,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\BeerParty.Data\BeerParty.Data.csproj" />
+		<ProjectReference Include="..\BeerParty.Data\BeerParty.Data.csproj" />BlL
 		<ProjectReference Include="..\BL\BeerParty.BL.csproj" />
 	</ItemGroup>
 
