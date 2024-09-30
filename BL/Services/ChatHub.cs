@@ -9,9 +9,9 @@ namespace BeerParty.BL.Services
 {
     public class ChatHub : Hub
     {
-        public async Task SendMessage(string sender, string receiver, string message)
+        public async Task SendMessage(string user, string message)
         {
-            await Clients.User(receiver).SendAsync("ReceiveMessage", sender, message);
+            await Clients.All.SendAsync("ReceiveMessage", user, message);
         }
     }
 }

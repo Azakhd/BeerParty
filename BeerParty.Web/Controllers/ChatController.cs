@@ -18,13 +18,9 @@ namespace BeerParty.Web.Controllers
         [HttpPost("send")]
         public async Task<IActionResult> SendMessage([FromBody] ChatMessage message)
         {
-            if (message == null || string.IsNullOrEmpty(message.Receiver))
-            {
-                return BadRequest("Message or receiver is null.");
-            }
-
-            await _hubContext.Clients.User(message.Receiver).SendAsync("ReceiveMessage", message.Sender, message.Message);
-            return Ok();
+            // Отправляем сообщение всем клиентам через хаб
+            await _hubContext.Clients.All.SendAsync("ReceiveMessage", message.User, message.Message);
+            return Ok(new { Status = "Message Sent" });
         }
     }
 

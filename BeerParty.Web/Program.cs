@@ -6,11 +6,19 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-
-
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin",
+        builder =>
+        {
+            builder.WithOrigins("http://127.0.0.1:5500") // Замените на нужный источник
+                   .AllowAnyMethod()
+                   .AllowAnyHeader()
+                   .AllowCredentials(); // Разрешает отправку учетных данных, если это необходимо
+        });
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -25,7 +33,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-
+app.UseCors("AllowSpecificOrigin");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -33,15 +41,11 @@ if (app.Environment.IsDevelopment())
 }
 app.UseRouting();
 app.UseAuthorization();
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers(); // Настройка маршрутизации контроллеров
-    endpoints.MapHub<ChatHub>("/chathub"); // Настройка маршрута для SignalR
-});
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
-
+app.MapHub<ChatHub>("/chatHub");
 app.MapControllers();
 
 app.Run();
