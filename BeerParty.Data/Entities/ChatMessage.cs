@@ -8,7 +8,10 @@ namespace BeerParty.Data.Entities
 {
     public class ChatMessage
     {
-        public string User { get; set; }
-        public string Message { get; set; }
+
+        public string? Sender { get; set; }
+        public string? Receiver { get; set; } // Получатель сообщения
+        public string? Message { get; set; }
+        public DateTime Timestamp { get; set; }
     }
 }

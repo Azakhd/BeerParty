@@ -1,0 +1,87 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.9/signalr.min.js"></script>
+</head>
+<body>
+    <h1>Чат</h1>
+
+    <div>
+        <label for="usernameInput">Введите свое имя:</label>
+        <input type="text" id="usernameInput" placeholder="Ваше имя" />
+        <button onclick="setUsername()">Установить имя</button>
+    </div>
+
+    <div>
+        <label for="userSelect">Выберите собеседника:</label>
+        <select id="userSelect"></select>
+    </div>
+
+    <div>
+        <input type="text" id="messageInput" placeholder="Введите сообщение" />
+        <button onclick="sendMessage()">Отправить</button>
+    </div>
+
+    <div id="messagesList"></div>
+
+    <script>
+        let currentUser = '';
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .build();
+
+        connection.on("ReceiveMessage", function (message) {
+            const messageItem = document.createElement("div");
+            messageItem.textContent = `${message.Sender}: ${message.Message}`;
+            document.getElementById("messagesList").appendChild(messageItem);
+        });
+
+        connection.start().then(function () {
+            console.log("Connected to chat");
+            getUsers();
+        });
+
+        function setUsername() {
+            const username = document.getElementById('usernameInput').value;
+            if (username) {
+                currentUser = username;
+                console.log("Ваше имя установлено:", currentUser);
+            } else {
+                alert("Введите ваше имя!");
+            }
+        }
+
+        function getUsers() {
+            fetch('/api/chat/users')
+                .then(response => response.json())
+                .then(users => {
+                    const userSelect = document.getElementById('userSelect');
+                    userSelect.innerHTML = '';
+                    users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user;
+                        option.textContent = user;
+                        userSelect.appendChild(option);
+                    });
+                });
+        }
+
+        function sendMessage() {
+            const message = document.getElementById('messageInput').value;
+            const receiver = document.getElementById('userSelect').value;
+
+            if (!currentUser) {
+                alert("Сначала укажите свое имя!");
+                return;
+            }
+
+            connection.invoke("SendMessageToUser", receiver, message)
+                .catch(err => console.error(err));
+        }
+    </script>
+</body>
+</html>
