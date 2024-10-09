@@ -18,7 +18,7 @@ namespace BeerParty.BL.Services
      SignInManager<ApplicationUser> signInManager,
      ApplicationContext dbContext)
     {
-        public async Task<IdentityResult> RegisterAsync(RegisterUserDto registerUserDto)
+      /*  public async Task<IdentityResult> RegisterAsync(RegisterUserDto registerUserDto)
         {
             var user = new ApplicationUser
             {
@@ -42,7 +42,7 @@ namespace BeerParty.BL.Services
 
             var roles = await userManager.GetRolesAsync(user);
             return GenerateToken(user.UserName, roles);
-        }
+        }*/
 
         /* public List<RoleDto> GetRoles()
          {
@@ -51,7 +51,7 @@ namespace BeerParty.BL.Services
                  .ToList();
          }*/
 
-        public async Task<List<UserDto>> GetUsersForRolesAssigningAsync(HttpContext httpContext)
+       /* public async Task<List<UserDto>> GetUsersForRolesAssigningAsync(HttpContext httpContext)
         {
             var currentUser = await userManager.GetUserAsync(httpContext.User);
             return await userManager
@@ -59,7 +59,7 @@ namespace BeerParty.BL.Services
                 .Where(u => u.Id != currentUser.Id)
                 .Select(u => new UserDto(u.Id, u.UserName))
                 .ToListAsync();
-        }
+        }*/
 
         /*  public async Task<IdentityResult> AssignRoleAsync(string roleId, Guid userId)
           {

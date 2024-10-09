@@ -13,27 +13,40 @@ namespace BeerParty.BL.Services
 
     public class ChatHub : Hub
     {
-        // Отправка сообщения конкретному пользователю
-        public async Task SendMessageToUser(string receiverConnectionId, string message)
-        {
-            var sender = Context.User.Identity.Name; // Получаем имя отправителя из контекста
+        private static readonly Dictionary<string, string> _connections = new Dictionary<string, string>();
 
-            // Отправляем сообщение пользователю с указанным ConnectionId
-            await Clients.Client(receiverConnectionId).SendAsync("ReceiveMessage", new ChatMessage
-            {
-                Sender = sender,
-                Receiver = receiverConnectionId,
-                Message = message,
-                Timestamp = DateTime.Now
-            });
-        }
-
-        // Подключение пользователя
         public override async Task OnConnectedAsync()
         {
             var userName = Context.User.Identity.Name;
+            _connections[userName] = Context.ConnectionId; // Сохраняем Connection ID
             await Clients.All.SendAsync("UserConnected", userName);
             await base.OnConnectedAsync();
+        }
+
+        public override async Task OnDisconnectedAsync(Exception exception)
+        {
+            var userName = Context.User.Identity.Name;
+            _connections.Remove(userName); // Удаляем Connection ID при отключении
+            await Clients.All.SendAsync("UserDisconnected", userName);
+        }
+
+        public async Task SendMessageToUser(string receiverUserName, string message)
+        {
+            if (_connections.TryGetValue(receiverUserName, out var receiverConnectionId))
+            {
+                var sender = Context.User.Identity.Name;
+                await Clients.Client(receiverConnectionId).SendAsync("ReceiveMessage", new ChatMessage
+                {
+                    Sender = sender,
+                    Receiver = receiverUserName,
+                    Message = message,
+                    Timestamp = DateTime.Now
+                });
+            }
+            else
+            {
+                throw new HubException("Receiver is not connected.");
+            }
         }
     }
 
