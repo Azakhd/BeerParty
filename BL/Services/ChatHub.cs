@@ -18,7 +18,7 @@ namespace BeerParty.BL.Services
         public override async Task OnConnectedAsync()
         {
             var userName = Context.User.Identity.Name;
-            _connections[userName] = Context.ConnectionId; // Сохраняем Connection ID
+            _connections[userName] = Context.ConnectionId; 
             await Clients.All.SendAsync("UserConnected", userName);
             await base.OnConnectedAsync();
         }

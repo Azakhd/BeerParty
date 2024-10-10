@@ -1,6 +1,7 @@
 ﻿using BeerParty.BL.Dto;
 using BeerParty.Data;
 using BeerParty.Data.Entities;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -50,15 +51,27 @@ namespace BeerParty.Web.Controllers
 
             var token = GenerateJwtToken(user);
 
+            // Установите имя пользователя в контексте
+            var claims = new[]
+            {
+        new Claim(JwtRegisteredClaimNames.Sub, user.Name!),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
+
+            var claimsIdentity = new ClaimsIdentity(claims, "login");
+            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+            await HttpContext.SignInAsync(claimsPrincipal);
+
             return Ok(new { token });
         }
+
         private string GenerateJwtToken(User user)
         {
             var claims = new[]
             {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Name),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
+        new Claim(JwtRegisteredClaimNames.Sub, user.Name !),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -67,17 +80,34 @@ namespace BeerParty.Web.Controllers
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(30),
+                expires: DateTime.Now.AddHours(1), // Установите нужное время жизни токена
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
         [HttpGet("users")]
         public IActionResult GetUsers()
         {
-            // В реальном проекте список можно получать из базы данных
-            var users = _context.Users.Select(u => u.Name).ToList(); // Пример
+            // Получаем имя текущего пользователя из токена
+            var currentUserName = User.Identity?.Name;
+
+            if (currentUserName == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
+            // Получаем всех пользователей, кроме текущего
+            var users = _context.Users
+                .Where(u => u.Name != currentUserName) // Фильтруем пользователей, исключая текущего
+                .Select(u => u.Name)
+                .ToList();
+
+            // Логирование
+            Console.WriteLine($"Текущий пользователь: {currentUserName}, Количество пользователей: {users.Count}");
+
             return Ok(users);
         }
+
     }
 }
