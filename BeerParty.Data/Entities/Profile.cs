@@ -13,7 +13,8 @@
         public string? Location { get; set; }
         public string? ProfilePictureUrl { get; set; }
         public ICollection<Interest>? Interests { get; set; }
-
+        public double? Height { get; set; }
+       
 
     }
 }
