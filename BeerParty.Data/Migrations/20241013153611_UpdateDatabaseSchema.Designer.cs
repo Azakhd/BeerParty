@@ -3,6 +3,7 @@ using System;
 using BeerParty.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BeerParty.Data.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20241013153611_UpdateDatabaseSchema")]
+    partial class UpdateDatabaseSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -72,37 +75,6 @@ namespace BeerParty.Data.Migrations
                     b.HasIndex("ProfileId");
 
                     b.ToTable("Interests");
-                });
-
-            modelBuilder.Entity("BeerParty.Data.Entities.MessageEntity", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<long>("RecipientId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("SenderId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("SentAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RecipientId");
-
-                    b.HasIndex("SenderId");
-
-                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("BeerParty.Data.Entities.Profile", b =>
@@ -177,10 +149,6 @@ namespace BeerParty.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int[]>("Roles")
-                        .IsRequired()
-                        .HasColumnType("integer[]");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
@@ -232,25 +200,6 @@ namespace BeerParty.Data.Migrations
                     b.HasOne("BeerParty.Data.Entities.Profile", null)
                         .WithMany("Interests")
                         .HasForeignKey("ProfileId");
-                });
-
-            modelBuilder.Entity("BeerParty.Data.Entities.MessageEntity", b =>
-                {
-                    b.HasOne("BeerParty.Data.Entities.User", "Recipient")
-                        .WithMany()
-                        .HasForeignKey("RecipientId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BeerParty.Data.Entities.User", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Recipient");
-
-                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("BeerParty.Data.Entities.Profile", b =>

@@ -1,7 +1,9 @@
 ﻿using BeerParty.BL.Dto;
 using BeerParty.Data;
 using BeerParty.Data.Entities;
+using BeerParty.Data.Enums;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -49,29 +51,27 @@ namespace BeerParty.Web.Controllers
             if (user == null || !BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
                 return Unauthorized("Invalid username or password");
 
+            // Генерируем JWT токен
             var token = GenerateJwtToken(user);
 
-            // Установите имя пользователя в контексте
-            var claims = new[]
-            {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Name!),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-    };
-
-            var claimsIdentity = new ClaimsIdentity(claims, "login");
-            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
-            await HttpContext.SignInAsync(claimsPrincipal);
-
+            // Возвращаем токен клиенту
             return Ok(new { token });
         }
 
+
         private string GenerateJwtToken(User user)
         {
-            var claims = new[]
-            {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Name !),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            var claims = new List<Claim>
+    {
+        // Используем ClaimTypes.Name для имени пользователя
+        new Claim(ClaimTypes.Name, user.Name!), // Имя пользователя
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // ID пользователя
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new Claim(ClaimTypes.Role, string.Join(", ", user.Roles)) // Роли пользователя
     };
+
+            // Отладочная информация
+            Console.WriteLine($"Generated claims: {string.Join(", ", claims.Select(c => $"{c.Type}: {c.Value}"))}");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -80,33 +80,82 @@ namespace BeerParty.Web.Controllers
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddHours(1), // Установите нужное время жизни токена
-                signingCredentials: creds);
+                expires: DateTime.Now.AddMinutes(30),
+                signingCredentials: creds
+            );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        [HttpGet("users")]
-        public IActionResult GetUsers()
-        {
-            // Получаем имя текущего пользователя из токена
-            var currentUserName = User.Identity?.Name;
 
-            if (currentUserName == null)
+
+
+        [Authorize(Roles = "Admin")] // Убедитесь, что только админы могут вызывать этот метод
+        [HttpGet("users")]
+        public async Task<IActionResult> GetUsers()
+        {
+            // Получение идентификатора текущего пользователя
+            var currentUserIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // Проверяем, если идентификатор не найден
+            if (string.IsNullOrEmpty(currentUserIdString))
             {
-                return Unauthorized("Пользователь не авторизован");
+                return BadRequest("Invalid user ID.");
             }
 
-            // Получаем всех пользователей, кроме текущего
-            var users = _context.Users
-                .Where(u => u.Name != currentUserName) // Фильтруем пользователей, исключая текущего
-                .Select(u => u.Name)
-                .ToList();
-
-            // Логирование
-            Console.WriteLine($"Текущий пользователь: {currentUserName}, Количество пользователей: {users.Count}");
+            // Получение пользователей, исключая текущего по идентификатору
+            var users = await _context.Users
+                .Where(u => u.Id.ToString() != currentUserIdString) // Исключаем текущего пользователя по ID
+                .Select(u => new
+                {
+                    u.Id,
+                    u.Name,
+                    u.Email,
+                    Role = string.Join(", ", u.Roles) // Преобразование списка ролей в строку
+                })
+                .ToListAsync();
 
             return Ok(users);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("update-role")]
+        public async Task<IActionResult> UpdateUserRole(long userId, Role newRole)
+        {
+            // Проверка, что текущий пользователь является администратором
+            var currentUserIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserIdString))
+            {
+                return Unauthorized("Текущий пользователь не авторизован.");
+            }
+
+            // Поиск пользователя, роль которого нужно изменить
+            var user = await _context.Users.Include(u => u.Roles).SingleOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound("Пользователь не найден.");
+            }
+
+            // Изменение роли пользователя
+            if (!user.Roles.Contains(newRole))
+            {
+                user.Roles.Clear(); // Очистим предыдущие роли (если у вас только одна роль)
+                user.Roles.Add(newRole); // Добавим новую роль
+            }
+
+            // Сохранение изменений
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = $"Роль пользователя {user.Name} изменена на {newRole}." });
+        }
+
+
+        [Authorize]
+        [HttpGet("claims")]
+        public IActionResult GetClaims()
+        {
+            var claims = User.Claims.Select(c => new { c.Type, c.Value });
+            return Ok(claims);
         }
 
     }

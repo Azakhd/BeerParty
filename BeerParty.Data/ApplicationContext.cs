@@ -10,8 +10,6 @@ namespace BeerParty.Data
 {
     public class ApplicationContext : DbContext
     {
-       
-
 
         public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options)
         {
@@ -21,7 +19,7 @@ namespace BeerParty.Data
         public DbSet<UserInterest> UserInterests { get; set; }
         public DbSet<Interest> Interests { get; set; }
         public DbSet<Profile> Profiles { get; set; }
-
+        public DbSet<MessageEntity> Messages { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -65,12 +63,23 @@ namespace BeerParty.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Profile>()
-            .HasOne(p => p.User) // Каждый профиль связан с одним пользователем
-            .WithOne() // Один пользователь может иметь только один профиль
-            .HasForeignKey<Profile>(p => p.UserId) // Указываем внешний ключ
-            .OnDelete(DeleteBehavior.Cascade);
+         .HasOne(p => p.User) // Связь с пользователем
+         .WithOne() // Один пользователь может иметь только один профиль
+         .HasForeignKey<Profile>(p => p.UserId) // Указываем внешний ключ
+         .OnDelete(DeleteBehavior.Cascade);
 
-     
+            modelBuilder.Entity<MessageEntity>()
+    .HasOne(m => m.Sender)
+    .WithMany()
+    .HasForeignKey(m => m.SenderId)
+    .OnDelete(DeleteBehavior.Restrict); // Для предотвращения каскадного удаления
+
+            modelBuilder.Entity<MessageEntity>()
+                .HasOne(m => m.Recipient)
+                .WithMany()
+                .HasForeignKey(m => m.RecipientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
         }
     }
 }
