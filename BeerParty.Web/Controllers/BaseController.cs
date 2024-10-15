@@ -6,6 +6,6 @@ namespace BeerParty.Web.Controllers
     [Route("api/[controller]")]
     public abstract class BaseController:ControllerBase
     {
-
+        
     }
 }

@@ -13,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddControllersWithViews();
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -89,9 +90,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseRouting();
-
 app.UseHttpsRedirection();
-app.UseAuthentication();
+app.UseAuthentication(); // Должен быть перед UseAuthorization
 app.UseAuthorization();
 app.MapHub<ChatHub>("/chatHub");
 app.MapControllers();

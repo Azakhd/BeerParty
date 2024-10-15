@@ -4,9 +4,14 @@ using BeerParty.Data;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace BeerParty.Web.Controllers
 {
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class ProfileController : BaseController
     {
         private readonly ApplicationContext _context;
@@ -16,19 +21,32 @@ namespace BeerParty.Web.Controllers
             _context = context;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> EditProfile()
+        [HttpGet("get-profile")]
+        public async Task<IActionResult> GetProfile()
         {
-            // Получите текущий профиль пользователя и передайте его в представление
-            var userId = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = long.TryParse(userIdString, out var parsedUserId) ? parsedUserId : (long?)null;
+
+            if (userIdString == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
             var profile = await _context.Profiles.SingleOrDefaultAsync(p => p.UserId == userId);
-            return View(profile);
+
+            if (profile == null)
+            {
+                return NotFound("Профиль не найден");
+            }
+
+            return Ok(profile); // Возвращаем профиль как JSON
         }
 
-        [HttpPost]
+        [HttpPost("UpdateProfile")]
         public async Task<IActionResult> UpdateProfile(ProfileUpdateDto model)
         {
-            var userId = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            var userIdString = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = long.TryParse(userIdString, out var parsedUserId) ? parsedUserId : (long?)null;
 
             if (userId == null)
             {
@@ -36,6 +54,7 @@ namespace BeerParty.Web.Controllers
             }
 
             var profile = await _context.Profiles.SingleOrDefaultAsync(p => p.UserId == userId);
+
             if (profile == null)
             {
                 return NotFound("Профиль не найден");
@@ -48,6 +67,8 @@ namespace BeerParty.Web.Controllers
             profile.Location = model.Location;
             profile.PhotoUrl = model.PhotoUrl;
             profile.Height = model.Height;
+            profile.DateOfBirth = model.DateOfBirth; // Установка даты рождения
+            profile.Gender = model.Gender; // Установка пола
 
             // Обновите интересы, если необходимо
             if (model.InterestIds != null)
@@ -57,12 +78,8 @@ namespace BeerParty.Web.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return RedirectToAction("ProfileUpdated");
+            return Ok("Профиль обновлён"); // Возвращаем сообщение об успешном обновлении
         }
 
-        public IActionResult ProfileUpdated()
-        {
-            return View();
-        }
     }
 }

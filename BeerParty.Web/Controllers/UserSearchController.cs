@@ -1,13 +1,16 @@
 ﻿using BeerParty.BL.Dto;
+using BeerParty.Data.Entities;
 using BeerParty.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace BeerParty.Web.Controllers
 {
-    public class UserSearchController:BaseController
+    public class UserSearchController : BaseController
     {
         private readonly ApplicationContext _context;
+
         public UserSearchController(ApplicationContext context)
         {
             _context = context;
@@ -18,24 +21,27 @@ namespace BeerParty.Web.Controllers
         {
             var users = _context.Users.Include(u => u.Profile).AsQueryable();
 
+            // Фильтрация по имени
             if (!string.IsNullOrWhiteSpace(request.Name))
             {
                 users = users.Where(u => u.Name.Contains(request.Name));
             }
 
+            // Фильтрация по возрасту
             if (request.MinAge.HasValue)
             {
-                users = users.Where(u => u.Age >= request.MinAge.Value);
+                users = users.Where(u => u.Profile.Age >= request.MinAge.Value);
             }
 
             if (request.MaxAge.HasValue)
             {
-                users = users.Where(u => u.Age <= request.MaxAge.Value);
+                users = users.Where(u => u.Profile.Age <= request.MaxAge.Value);
             }
 
+            // Фильтрация по полу
             if (request.Gender.HasValue)
             {
-                users = users.Where(u => u.Gender == request.Gender.Value);
+                users = users.Where(u => u.Profile.Gender == request.Gender.Value);
             }
 
             // Учет интересов из профиля
@@ -55,9 +61,11 @@ namespace BeerParty.Web.Controllers
                 users = users.Where(u => u.Profile.Height <= request.MaxHeight.Value);
             }
 
+            // Получаем список отфильтрованных пользователей
             var filteredUsers = await users.ToListAsync();
-            return View("SearchResults", filteredUsers);
-        }
 
+            // Возвращаем результаты поиска как JSON
+            return Ok(filteredUsers);
+        }
     }
 }
