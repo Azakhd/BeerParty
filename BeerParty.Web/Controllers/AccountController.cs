@@ -26,19 +26,31 @@ namespace BeerParty.Web.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterUserDto model)
         {
-            if (await _context.Users.AnyAsync(u => u.Name == model.Name))
-                return BadRequest("Username already exists");
+            if (await _context.Users.AnyAsync(u => u.Email == model.Email))
+            {
+                return BadRequest("Пользователь с таким email уже существует.");
+            }
 
             var user = new User
             {
                 Name = model.Name,
-                Email = model.Email
+                Email = model.Email,
+                CreatedAt = DateTime.UtcNow
             };
 
             // Хеширование пароля
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
 
             _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+            var profile = new Profile
+            {
+                UserId = user.Id,
+                FirstName = model.Name,
+                // другие поля по умолчанию
+            };
+
+            _context.Profiles.Add(profile);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "User registered successfully" });
