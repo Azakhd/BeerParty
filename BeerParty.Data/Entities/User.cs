@@ -29,7 +29,7 @@ namespace BeerParty.Data.Entities
 
         [Required]
         public DateTime CreatedAt { get; set; }
-
+        public List<Role> Roles { get; set; } = new List<Role>();
         public Profile? Profile { get; set; }
         public ICollection<UserInterest> ?UserInterests { get; set; }
 

@@ -6,4 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BeerParty.Web\BeerParty.Web.csproj" />
+    <ProjectReference Include="..\BL\BeerParty.BL.csproj" />
+  </ItemGroup>
+
 </Project>

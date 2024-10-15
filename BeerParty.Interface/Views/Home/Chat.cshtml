@@ -1,0 +1,32 @@
+﻿@{
+    ViewBag.Title = "Chat";
+}
+
+<h2>Chat</h2>
+
+<input type="text" id="userInput" placeholder="Name" />
+<input type="text" id="messageInput" placeholder="Message" />
+<button id="sendButton">Send</button>
+
+<ul id="messagesList"></ul>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft.signalr/3.1.1/signalr.min.js"></script>
+<script>
+    $(function () {
+        var chat = $.connection.chatHub;
+
+        chat.client.receiveMessage = function (user, message) {
+            $('#messagesList').append('<li><strong>' + user + '</strong>: ' + message + '</li>');
+        };
+
+        $('#sendButton').click(function () {
+            var user = $('#userInput').val();
+            var message = $('#messageInput').val();
+            chat.server.send(user, message);
+            $('#messageInput').val('').focus();
+        });
+
+        $.connection.hub.start();
+    });
+</script>

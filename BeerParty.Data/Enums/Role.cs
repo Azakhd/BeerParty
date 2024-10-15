@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace BeerParty.Data.Enums
 {
-    public enum Role
-    {
-        Admin,
-        Moderator,
-        User
-    }
+        public enum Role
+        {
+            Admin = 1,
+            Moderator = 2,
+            User = 3,
+        }
 }

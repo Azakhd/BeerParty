@@ -7,23 +7,19 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.8" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
 		<PackageReference Include="runtime.aot.System.Diagnostics.Tools" Version="4.3.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\BeerParty.Data\BeerParty.Data.csproj" />
+		<ProjectReference Include="..\BeerParty.Data\BeerParty.Data.csproj" />BlL
 		<ProjectReference Include="..\BL\BeerParty.BL.csproj" />
-	</ItemGroup>
-	<ItemGroup>
-	  <None Include="wwwroot\chat.html" />
 	</ItemGroup>
 
 </Project>

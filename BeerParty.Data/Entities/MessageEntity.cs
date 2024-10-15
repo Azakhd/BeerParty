@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace BeerParty.Data.Entities
 {
-    public class Message:BaseEntity
+    public class MessageEntity : BaseEntity
     {
-        public int SenderId { get; set; }
-        public int RecipientId { get; set; }
+        public long SenderId { get; set; }
+        public long RecipientId { get; set; }
         [Required]
         [MaxLength(500)] // Ограничение на максимальную длину сообщения
         public string ?Content { get; set; }
