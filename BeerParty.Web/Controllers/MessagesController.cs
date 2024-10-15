@@ -1,5 +1,5 @@
 ﻿using BeerParty.BL.Dto;
-using BeerParty.BL.Services;
+
 using BeerParty.Data;
 using BeerParty.Data.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -76,7 +76,7 @@ namespace BeerParty.Web.Controllers
                 .Where(m => (m.SenderId == currentUser.Id && m.RecipientId == friendId) ||
                              (m.SenderId == friendId && m.RecipientId == currentUser.Id))
                 .OrderBy(m => m.SentAt)
-                .Select(m => new { m.Sender.Name, m.Content, m.SentAt })
+                .Select(m => new { m.Sender!.Name, m.Content, m.SentAt })
                 .ToListAsync();
 
             return Ok(messages);

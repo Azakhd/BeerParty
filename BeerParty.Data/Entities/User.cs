@@ -18,7 +18,7 @@ namespace BeerParty.Data.Entities
        
         [Required]
         public string ?PasswordHash { get; set; }
-
+        public ICollection<UserInterest> UserInterests { get; set; } = new List<UserInterest>();
         [Required]
         public DateTime CreatedAt { get; set; }
         public List<Role> Roles { get; set; } = new List<Role>();

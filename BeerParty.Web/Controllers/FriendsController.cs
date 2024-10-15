@@ -88,7 +88,7 @@ namespace BeerParty.Web.Controllers
                 .Include(f => f.FriendUser)
                 .Select(f => new
                 {
-                    f.FriendUser.Name,
+                    f.FriendUser!.Name,
                     f.FriendUser.Email
                 })
                 .ToListAsync();

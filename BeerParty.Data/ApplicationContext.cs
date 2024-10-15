@@ -54,7 +54,7 @@ namespace BeerParty.Data
             modelBuilder.Entity<User>()
                 .Property(u => u.Email)
                 .HasConversion(
-                         e => e.ToLower(), // Сохранение в нижнем регистре
+                         e => e!.ToLower(), // Сохранение в нижнем регистре
                         e => e);
 
             modelBuilder.Entity<User>()

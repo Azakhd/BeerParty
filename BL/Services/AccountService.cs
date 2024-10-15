@@ -12,13 +12,13 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BeerParty.BL.Services
+/*namespace BeerParty.BL.Services
 {
     public class AuthService(UserManager<ApplicationContext> userManager,
      SignInManager<ApplicationUser> signInManager,
      ApplicationContext dbContext)
     {
-      /*  public async Task<IdentityResult> RegisterAsync(RegisterUserDto registerUserDto)
+      *//*  public async Task<IdentityResult> RegisterAsync(RegisterUserDto registerUserDto)
         {
             var user = new ApplicationUser
             {
@@ -68,7 +68,7 @@ namespace BeerParty.BL.Services
 
               var user = await userManager.FindByIdAsync(userId.ToString());
               return await userManager.AddToRoleAsync(user, role.Name);
-          }*/
+          }*//*
 
         private string GenerateToken(string username, IList<string> roles)
         {
@@ -95,3 +95,4 @@ namespace BeerParty.BL.Services
         }
     }
 }
+*/

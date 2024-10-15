@@ -45,7 +45,7 @@ namespace BeerParty.Web.Controllers
         [HttpPost("UpdateProfile")]
         public async Task<IActionResult> UpdateProfile(ProfileUpdateDto model)
         {
-            var userIdString = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userId = long.TryParse(userIdString, out var parsedUserId) ? parsedUserId : (long?)null;
 
             if (userId == null)

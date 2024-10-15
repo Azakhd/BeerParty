@@ -24,41 +24,41 @@ namespace BeerParty.Web.Controllers
             // Фильтрация по имени
             if (!string.IsNullOrWhiteSpace(request.Name))
             {
-                users = users.Where(u => u.Name.Contains(request.Name));
+                users = users.Where(u => u.Name!.Contains(request.Name));
             }
 
             // Фильтрация по возрасту
             if (request.MinAge.HasValue)
             {
-                users = users.Where(u => u.Profile.Age >= request.MinAge.Value);
+                users = users.Where(u => u.Profile!.Age >= request.MinAge.Value);
             }
 
             if (request.MaxAge.HasValue)
             {
-                users = users.Where(u => u.Profile.Age <= request.MaxAge.Value);
+                users = users.Where(u => u.Profile!.Age! <= request.MaxAge.Value);
             }
 
             // Фильтрация по полу
             if (request.Gender.HasValue)
             {
-                users = users.Where(u => u.Profile.Gender == request.Gender.Value);
+                users = users.Where(u => u.Profile!.Gender == request.Gender.Value);
             }
 
             // Учет интересов из профиля
             if (request.Interests != null && request.Interests.Count > 0)
             {
-                users = users.Where(u => u.Profile.Interests.Any(i => request.Interests.Contains(i.Id)));
+                users = users.Where(u => u.Profile!.Interests!.Any(i => request.Interests.Contains(i.Id)));
             }
 
             // Учет роста
             if (request.MinHeight.HasValue)
             {
-                users = users.Where(u => u.Profile.Height >= request.MinHeight.Value);
+                users = users.Where(u => u.Profile!.Height >= request.MinHeight.Value);
             }
 
             if (request.MaxHeight.HasValue)
             {
-                users = users.Where(u => u.Profile.Height <= request.MaxHeight.Value);
+                users = users.Where(u => u.Profile!.Height <= request.MaxHeight.Value);
             }
 
             // Получаем список отфильтрованных пользователей
