@@ -8,6 +8,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+		<PackageReference Include="Hangfire" Version="1.8.14" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
@@ -23,7 +24,7 @@
 		<ProjectReference Include="..\BL\BeerParty.BL.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-	  <None Include="wwwroot\chat.html" />
+	  <Folder Include="wwwroot\" />
 	</ItemGroup>
 
 </Project>

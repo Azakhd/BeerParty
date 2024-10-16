@@ -3,6 +3,7 @@ using System;
 using BeerParty.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BeerParty.Data.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20241016221255_AddPreferenceAndCreateMeetingAndParticipant")]
+    partial class AddPreferenceAndCreateMeetingAndParticipant
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -86,16 +89,15 @@ namespace BeerParty.Data.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Location")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("MeetingTime")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Title")
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -106,19 +108,29 @@ namespace BeerParty.Data.Migrations
 
             modelBuilder.Entity("BeerParty.Data.Entities.MeetingParticipant", b =>
                 {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("IsConfirmed")
+                        .HasColumnType("boolean");
+
                     b.Property<long>("MeetingId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("MeetingId1")
                         .HasColumnType("bigint");
 
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("Id")
-                        .HasColumnType("bigint");
+                    b.HasKey("Id");
 
-                    b.Property<bool>("IsConfirmed")
-                        .HasColumnType("boolean");
+                    b.HasIndex("MeetingId");
 
-                    b.HasKey("MeetingId", "UserId");
+                    b.HasIndex("MeetingId1");
 
                     b.HasIndex("UserId");
 
@@ -305,10 +317,14 @@ namespace BeerParty.Data.Migrations
             modelBuilder.Entity("BeerParty.Data.Entities.MeetingParticipant", b =>
                 {
                     b.HasOne("BeerParty.Data.Entities.Meeting", "Meeting")
-                        .WithMany("Participants")
+                        .WithMany()
                         .HasForeignKey("MeetingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("BeerParty.Data.Entities.Meeting", null)
+                        .WithMany("Participants")
+                        .HasForeignKey("MeetingId1");
 
                     b.HasOne("BeerParty.Data.Entities.User", "User")
                         .WithMany()

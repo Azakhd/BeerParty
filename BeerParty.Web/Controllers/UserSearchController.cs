@@ -4,6 +4,7 @@ using BeerParty.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using BeerParty.Data.Enums;
 
 namespace BeerParty.Web.Controllers
 {
@@ -35,7 +36,7 @@ namespace BeerParty.Web.Controllers
 
             if (request.MaxAge.HasValue)
             {
-                users = users.Where(u => u.Profile!.Age! <= request.MaxAge.Value);
+                users = users.Where(u => u.Profile!.Age <= request.MaxAge.Value);
             }
 
             // Фильтрация по полу
@@ -44,13 +45,13 @@ namespace BeerParty.Web.Controllers
                 users = users.Where(u => u.Profile!.Gender == request.Gender.Value);
             }
 
-            // Учет интересов из профиля
+            // Фильтрация по интересам
             if (request.Interests != null && request.Interests.Count > 0)
             {
                 users = users.Where(u => u.Profile!.Interests!.Any(i => request.Interests.Contains(i.Id)));
             }
 
-            // Учет роста
+            // Фильтрация по росту
             if (request.MinHeight.HasValue)
             {
                 users = users.Where(u => u.Profile!.Height >= request.MinHeight.Value);
@@ -61,11 +62,14 @@ namespace BeerParty.Web.Controllers
                 users = users.Where(u => u.Profile!.Height <= request.MaxHeight.Value);
             }
 
-            // Получаем список отфильтрованных пользователей
-            var filteredUsers = await users.ToListAsync();
+            if (request.Preference != null) 
+            {
+                users = users.Where(u => u.Profile!.LookingFor == request.Preference); 
+            }
 
-            // Возвращаем результаты поиска как JSON
-            return Ok(filteredUsers);
+            var filteredUsers = await users.ToListAsync();
+            return Ok(filteredUsers); 
         }
+
     }
 }
