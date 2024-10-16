@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static BeerParty.Data.Entities.Meet;
 
 namespace BeerParty.Data
 {
@@ -16,10 +17,13 @@ namespace BeerParty.Data
         }
         public DbSet<User> Users { get; set; }
         public DbSet<Friend> Friends { get; set; }
+        public DbSet<MeetEntity> MeetEntities { get; set; }
+
         public DbSet<UserInterest> UserInterests { get; set; }
         public DbSet<Interest> Interests { get; set; }
         public DbSet<Profile> Profiles { get; set; }
         public DbSet<MessageEntity> Messages { get; set; }
+        public DbSet<Meet> Meets { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -47,6 +51,13 @@ namespace BeerParty.Data
                 .WithMany() // У друга также может быть много друзей
                 .HasForeignKey(f => f.FriendId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+                        modelBuilder.Entity<MeetEntity>()
+                 .HasOne(m => m.Organizer)
+                 .WithMany() // Определите, если организатор может иметь много встреч
+                 .HasForeignKey(m => m.OrganizerId)
+                 .OnDelete(DeleteBehavior.Cascade); // Укажите поведение при удалении организатора
+
 
             modelBuilder.Entity<User>()// Настройка уникального индекса для Email
                 .HasIndex(u => u.Email)
