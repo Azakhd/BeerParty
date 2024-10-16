@@ -1,5 +1,10 @@
 ﻿using BeerParty.Data.Entities;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace BeerParty.Data
 {
@@ -47,7 +52,7 @@ namespace BeerParty.Data
                 .HasForeignKey(f => f.FriendId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<User>()
+            modelBuilder.Entity<User>()// Настройка уникального индекса для Email
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
