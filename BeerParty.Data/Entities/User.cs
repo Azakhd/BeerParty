@@ -1,6 +1,4 @@
-﻿
-
-using BeerParty.Data.Enums;
+﻿using BeerParty.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Scaffolding.Metadata;
 using System.ComponentModel.DataAnnotations;

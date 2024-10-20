@@ -7,6 +7,13 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="wwwroot\**" />
+	  <Content Remove="wwwroot\**" />
+	  <EmbeddedResource Remove="wwwroot\**" />
+	  <None Remove="wwwroot\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
 		<PackageReference Include="Hangfire" Version="1.8.14" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
@@ -22,9 +29,6 @@
 	<ItemGroup>
 		<ProjectReference Include="..\BeerParty.Data\BeerParty.Data.csproj" />
 		<ProjectReference Include="..\BL\BeerParty.BL.csproj" />
-	</ItemGroup>
-	<ItemGroup>
-	  <Folder Include="wwwroot\" />
 	</ItemGroup>
 
 </Project>
