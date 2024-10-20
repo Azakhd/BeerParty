@@ -15,6 +15,7 @@ builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllersWithViews();
 
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Chat API", Version = "v1" });
@@ -82,6 +83,7 @@ builder.Services.AddAuthentication(options =>
 
 
 var app = builder.Build();
+app.UseStaticFiles();
 app.UseFileServer();
 app.UseCors("AllowSpecificOrigin");
 if (app.Environment.IsDevelopment())
