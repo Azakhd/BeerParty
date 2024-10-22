@@ -11,7 +11,7 @@ namespace BeerParty.Data.Entities
     {
         public long MeetingId { get; set; }
         [JsonIgnore]
-        public Meeting Meeting { get; set; } // Связь с встречей
+        public Meeting? Meeting { get; set; } // Связь с встречей
         public long UserId { get; set; } // Идентификатор пользователя
         public User? User { get; set; } // Связь с пользователем
         public bool IsConfirmed { get; set; } // Статус подтверждения

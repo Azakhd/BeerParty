@@ -8,7 +8,8 @@ namespace BeerParty.Data.Entities
         public string? Title { get; set; }
         public long CreatorId { get; set; } // Идентификатор создателя встречи
         public User? Creator { get; set; } // Связь с пользователем
-
+        public long? CoAuthorId { get; set; } // Идентификатор соавтора (может быть null)
+        public User? CoAuthor { get; set; } // Связь с соавтором
         public DateTime MeetingTime { get; set; } // Дата и время встречи
         public string? Location { get; set; } // Место встречи
         public string? Description { get; set; } // Описание встречи

@@ -60,6 +60,7 @@ namespace BeerParty.Web.Controllers
                         Location = dto.Location,
                         Description = dto.Description,
                         IsPublic = dto.IsPublic,
+                        CoAuthorId = dto.CoAuthorId,
                         Category = dto.Category // Устанавливаем категорию встречи
                     };
 
@@ -89,10 +90,6 @@ namespace BeerParty.Web.Controllers
                 }
             }
         }
-
-
-
-
 
         // Подтверждение участия в встрече
         [HttpPost("{meetingId}/participants/confirm")]
@@ -143,13 +140,12 @@ namespace BeerParty.Web.Controllers
         public async Task<IActionResult> GetMeeting(long id)
         {
             var meeting = await _context.Meetings
-       .Include(m => m.Creator) // Включаем создателя встречи
-           .ThenInclude(u => u.Profile) // Загружаем профиль создателя
-       .Include(m => m.Participants) // Включаем участников
-           .ThenInclude(p => p.User) // Загружаем пользователей участников
-               .ThenInclude(u => u.Profile) // Загружаем профиль каждого участника
+       .Include(m => m.Creator)
+           .ThenInclude(u => u.Profile)
+       .Include(m => m.Participants)
+           .ThenInclude(p => p.User)
+               .ThenInclude(u => u.Profile)
        .SingleOrDefaultAsync(m => m.Id == id);
-
 
             if (meeting == null)
                 return NotFound();
@@ -182,16 +178,23 @@ namespace BeerParty.Web.Controllers
                 Creator = new
                 {
                     Id = meeting.Creator.Id,
-                    FirstName = meeting.Creator.Profile?.FirstName, // Проверка на null
-                    LastName = meeting.Creator.Profile?.LastName,   // Проверка на null
-                    ProfilePictureUrl = meeting.Creator.Profile?.PhotoUrl // Проверка на null
+                    FirstName = meeting.Creator.Profile?.FirstName,
+                    LastName = meeting.Creator.Profile?.LastName,
+                    ProfilePictureUrl = meeting.Creator.Profile?.PhotoUrl
                 },
+                CoAuthor = meeting.CoAuthor != null ? new
+                {
+                    Id = meeting.CoAuthor.Id,
+                    FirstName = meeting.CoAuthor.Profile?.FirstName,
+                    LastName = meeting.CoAuthor.Profile?.LastName,
+                    ProfilePictureUrl = meeting.CoAuthor.Profile?.PhotoUrl
+                } : null, // Если соавтор не задан, возвращаем null
                 Participants = meeting.Participants.Select(p => new
                 {
                     Id = p.User?.Id,
-                    FirstName = p.User?.Profile?.FirstName, // Проверка на null
-                    LastName = p.User?.Profile?.LastName,   // Проверка на null
-                    ProfilePictureUrl = p.User?.Profile?.PhotoUrl // Проверка на null
+                    FirstName = p.User?.Profile?.FirstName,
+                    LastName = p.User?.Profile?.LastName,
+                    ProfilePictureUrl = p.User?.Profile?.PhotoUrl
                 }).ToList()
             };
 
@@ -199,11 +202,64 @@ namespace BeerParty.Web.Controllers
             return Ok(meetingInfo);
         }
 
+        [HttpPut("UpdateMeeting{id}")]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateMeeting(long id, MeetingUpdateDto meetingUpdateDto)
+        {
+            // Находим встречу по ID
+            var meeting = await _context.Meetings
+                .Include(m => m.Participants) // Загружаем участников (если нужно)
+                .SingleOrDefaultAsync(m => m.Id == id);
+
+            if (meeting == null)
+            {
+                return NotFound(); // Если встреча не найдена
+            }
+
+            // Получаем ID пользователя из токена
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return Unauthorized(); // Если не удается получить ID пользователя
+            }
+
+            var userId = long.Parse(userIdClaim.Value);
+
+            // Проверяем, является ли пользователь создателем встречи, соавтором или администратором
+            bool isCreator = meeting.CreatorId == userId;
+            bool isCoAuthor = meeting.CoAuthorId == userId; // Проверка на соавтора
+            bool isAdmin = User.IsInRole("Admin"); // Предполагается, что у вас есть роль "Admin"
+
+            if (!isCreator && !isCoAuthor && !isAdmin)
+            {
+                return Forbid(); // Запрещаем доступ, если пользователь не создатель, не соавтор и не администратор
+            }
+
+            // Обновляем информацию о встрече
+            meeting.Title = meetingUpdateDto.Title ?? meeting.Title;
+            meeting.MeetingTime = meetingUpdateDto.MeetingTime != default ? meetingUpdateDto.MeetingTime : meeting.MeetingTime;
+            meeting.Location = meetingUpdateDto.Location ?? meeting.Location;
+            meeting.Description = meetingUpdateDto.Description ?? meeting.Description;
+            meeting.IsPublic = meetingUpdateDto.IsPublic;
+
+            // Обновление соавтора
+            if (meetingUpdateDto.CoAuthorId.HasValue)
+            {
+                meeting.CoAuthorId = meetingUpdateDto.CoAuthorId.Value; // Устанавливаем ID соавтора
+            }
+            else
+            {
+                meeting.CoAuthorId = null; // Если CoAuthorId не передан, обнуляем значение
+            }
+
+            await _context.SaveChangesAsync(); // Сохраняем изменения в базе данных
+
+            return NoContent(); // Возвращаем статус 204 No Content, если обновление прошло успешно
+        }
 
 
         // Присоединение к публичной встрече
         [HttpPost("{meetingId}/join")]
-        [Authorize] // Требуется авторизация
         public async Task<IActionResult> JoinMeeting(long meetingId)
         {
             var meeting = await _context.Meetings.FindAsync(meetingId);

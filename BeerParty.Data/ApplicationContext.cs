@@ -68,10 +68,10 @@ namespace BeerParty.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Profile>()
-                .HasOne(p => p.User)
-                .WithOne()
-                .HasForeignKey<Profile>(p => p.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+       .HasOne(p => p.User)
+       .WithOne(u => u.Profile) // Указываем навигационное свойство User
+       .HasForeignKey<Profile>(p => p.UserId)
+       .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<MessageEntity>()
                 .HasOne(m => m.Sender)

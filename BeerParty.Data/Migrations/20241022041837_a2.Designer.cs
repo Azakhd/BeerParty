@@ -3,6 +3,7 @@ using System;
 using BeerParty.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BeerParty.Data.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20241022041837_a2")]
+    partial class a2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -85,9 +88,6 @@ namespace BeerParty.Data.Migrations
                     b.Property<int>("Category")
                         .HasColumnType("integer");
 
-                    b.Property<long?>("CoAuthorId")
-                        .HasColumnType("bigint");
-
                     b.Property<long>("CreatorId")
                         .HasColumnType("bigint");
 
@@ -107,8 +107,6 @@ namespace BeerParty.Data.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CoAuthorId");
 
                     b.HasIndex("CreatorId");
 
@@ -208,9 +206,15 @@ namespace BeerParty.Data.Migrations
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("UserId1")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId1")
                         .IsUnique();
 
                     b.ToTable("Profiles");
@@ -298,17 +302,11 @@ namespace BeerParty.Data.Migrations
 
             modelBuilder.Entity("BeerParty.Data.Entities.Meeting", b =>
                 {
-                    b.HasOne("BeerParty.Data.Entities.User", "CoAuthor")
-                        .WithMany()
-                        .HasForeignKey("CoAuthorId");
-
                     b.HasOne("BeerParty.Data.Entities.User", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("CoAuthor");
 
                     b.Navigation("Creator");
                 });
@@ -354,10 +352,14 @@ namespace BeerParty.Data.Migrations
             modelBuilder.Entity("BeerParty.Data.Entities.Profile", b =>
                 {
                     b.HasOne("BeerParty.Data.Entities.User", "User")
-                        .WithOne("Profile")
+                        .WithOne()
                         .HasForeignKey("BeerParty.Data.Entities.Profile", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("BeerParty.Data.Entities.User", null)
+                        .WithOne("Profile")
+                        .HasForeignKey("BeerParty.Data.Entities.Profile", "UserId1");
 
                     b.Navigation("User");
                 });
