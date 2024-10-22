@@ -7,6 +7,6 @@ using System.Threading.Tasks;
 namespace BeerParty.BL.Dto
 {
     public record MeetingUpdateDto( string? Title, DateTime MeetingTime ,string? Location,
-    string? Description ,bool IsPublic, long? CoAuthorId);
+    string? Description ,bool IsPublic, long? CoAuthorId, short? ParticipantLimit);
    
 }

@@ -41,8 +41,14 @@ namespace BeerParty.Web.Controllers
             // Хеширование пароля
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
 
+            // Присваиваем роль "User" (ID 3) напрямую, без проверки в базе данных
+            user.Roles.Add(Role.User);// Присваиваем роль с ID 3
+
+            // Добавляем пользователя в базу данных
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+            // Создаем профиль для пользователя
             var profile = new Profile
             {
                 UserId = user.Id,
@@ -55,6 +61,8 @@ namespace BeerParty.Web.Controllers
 
             return Ok(new { message = "User registered successfully" });
         }
+
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginUserDto model)
         {

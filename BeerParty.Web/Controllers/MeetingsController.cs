@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using BeerParty.BL.Dto;
 using Microsoft.AspNetCore.Authorization;
+using System;
 
 namespace BeerParty.Web.Controllers
 {
@@ -48,10 +49,17 @@ namespace BeerParty.Web.Controllers
                 }
             }
 
+            if (dto.ParticipantLimit.HasValue && dto.ParticipantLimit.Value < participants.Count)
+            {
+                return BadRequest($"Количество участников превышает лимит в {dto.ParticipantLimit.Value}.");
+            }
+
             using (var transaction = await _context.Database.BeginTransactionAsync())
             {
                 try
                 {
+                    long? coAuthorId = dto.CoAuthorId.HasValue && dto.CoAuthorId.Value != 0 ? dto.CoAuthorId.Value : (long?)null;
+
                     var meeting = new Meeting
                     {
                         Title = dto.Title,
@@ -60,8 +68,9 @@ namespace BeerParty.Web.Controllers
                         Location = dto.Location,
                         Description = dto.Description,
                         IsPublic = dto.IsPublic,
-                        CoAuthorId = dto.CoAuthorId,
-                        Category = dto.Category // Устанавливаем категорию встречи
+                        CoAuthorId = coAuthorId,
+                        Category = dto.Category,
+                        ParticipantLimit = dto.ParticipantLimit // Устанавливаем лимит участников
                     };
 
                     _context.Meetings.Add(meeting);
@@ -90,6 +99,7 @@ namespace BeerParty.Web.Controllers
                 }
             }
         }
+
 
         // Подтверждение участия в встрече
         [HttpPost("{meetingId}/participants/confirm")]
@@ -203,60 +213,49 @@ namespace BeerParty.Web.Controllers
         }
 
         [HttpPut("UpdateMeeting{id}")]
-        [HttpPut("{id}")]
         public async Task<IActionResult> UpdateMeeting(long id, MeetingUpdateDto meetingUpdateDto)
         {
             // Находим встречу по ID
             var meeting = await _context.Meetings
-                .Include(m => m.Participants) // Загружаем участников (если нужно)
+                .Include(m => m.Participants)
                 .SingleOrDefaultAsync(m => m.Id == id);
 
             if (meeting == null)
             {
-                return NotFound(); // Если встреча не найдена
+                return NotFound();
             }
 
-            // Получаем ID пользователя из токена
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null)
             {
-                return Unauthorized(); // Если не удается получить ID пользователя
+                return Unauthorized();
             }
 
             var userId = long.Parse(userIdClaim.Value);
-
-            // Проверяем, является ли пользователь создателем встречи, соавтором или администратором
             bool isCreator = meeting.CreatorId == userId;
-            bool isCoAuthor = meeting.CoAuthorId == userId; // Проверка на соавтора
-            bool isAdmin = User.IsInRole("Admin"); // Предполагается, что у вас есть роль "Admin"
+            bool isCoAuthor = meeting.CoAuthorId == userId;
+            bool isAdmin = User.IsInRole("Admin");
 
             if (!isCreator && !isCoAuthor && !isAdmin)
             {
-                return Forbid(); // Запрещаем доступ, если пользователь не создатель, не соавтор и не администратор
+                return Forbid();
             }
 
-            // Обновляем информацию о встрече
             meeting.Title = meetingUpdateDto.Title ?? meeting.Title;
             meeting.MeetingTime = meetingUpdateDto.MeetingTime != default ? meetingUpdateDto.MeetingTime : meeting.MeetingTime;
             meeting.Location = meetingUpdateDto.Location ?? meeting.Location;
             meeting.Description = meetingUpdateDto.Description ?? meeting.Description;
             meeting.IsPublic = meetingUpdateDto.IsPublic;
 
-            // Обновление соавтора
-            if (meetingUpdateDto.CoAuthorId.HasValue)
+            if (meetingUpdateDto.ParticipantLimit.HasValue)
             {
-                meeting.CoAuthorId = meetingUpdateDto.CoAuthorId.Value; // Устанавливаем ID соавтора
-            }
-            else
-            {
-                meeting.CoAuthorId = null; // Если CoAuthorId не передан, обнуляем значение
+                meeting.ParticipantLimit = meetingUpdateDto.ParticipantLimit.Value; // Обновляем лимит участников
             }
 
-            await _context.SaveChangesAsync(); // Сохраняем изменения в базе данных
+            await _context.SaveChangesAsync();
 
-            return NoContent(); // Возвращаем статус 204 No Content, если обновление прошло успешно
+            return NoContent();
         }
-
 
         // Присоединение к публичной встрече
         [HttpPost("{meetingId}/join")]
@@ -266,26 +265,30 @@ namespace BeerParty.Web.Controllers
             if (meeting == null)
                 return NotFound();
 
-            // Проверяем, является ли встреча публичной
             if (!meeting.IsPublic)
-                return Forbid(); // Если встреча не публичная
+                return Forbid();
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             var userId = long.Parse(userIdClaim.Value);
 
-            // Проверяем, не является ли пользователь уже участником
             var existingParticipant = await _context.MeetingParticipants
                 .FirstOrDefaultAsync(mp => mp.MeetingId == meetingId && mp.UserId == userId);
 
             if (existingParticipant != null)
-                return Conflict("Вы уже участвуете в этой встрече."); // Пользователь уже участник
+                return Conflict("Вы уже участвуете в этой встрече.");
 
-            // Создаем запись о новом участнике
+            // Проверяем лимит участников
+            var participantCount = await _context.MeetingParticipants.CountAsync(mp => mp.MeetingId == meetingId);
+            if (meeting.ParticipantLimit.HasValue && participantCount >= meeting.ParticipantLimit.Value)
+            {
+                return BadRequest("Лимит участников для этой встречи достигнут.");
+            }
+
             var newParticipant = new MeetingParticipant
             {
                 MeetingId = meetingId,
                 UserId = userId,
-                IsConfirmed = false // Можно сделать подтверждение по вашему желанию
+                IsConfirmed = false
             };
 
             _context.MeetingParticipants.Add(newParticipant);
@@ -293,6 +296,7 @@ namespace BeerParty.Web.Controllers
 
             return Ok(new { message = "Вы успешно присоединились к встрече.", participant = newParticipant });
         }
+
 
 
     }

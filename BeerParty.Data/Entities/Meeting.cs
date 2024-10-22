@@ -14,6 +14,7 @@ namespace BeerParty.Data.Entities
         public string? Location { get; set; } // Место встречи
         public string? Description { get; set; } // Описание встречи
         public MeetingCategory Category { get; set; }
+        public short? ParticipantLimit {get; set;}
         public bool IsPublic { get; set; } // Новое свойство
         [JsonIgnore]
         public List<MeetingParticipant> Participants { get; set; } = new List<MeetingParticipant>(); // Участники встречи

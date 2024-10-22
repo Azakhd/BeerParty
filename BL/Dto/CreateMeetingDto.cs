@@ -9,6 +9,6 @@ namespace BeerParty.BL.Dto
 {
     public record CreateMeetingDto(DateTime MeetingTime, string Location,
         string Description, List<int> ParticipantIds, string Title, bool IsPublic,
-        MeetingCategory Category, long? CoAuthorId);
+        MeetingCategory Category, long? CoAuthorId, short? ParticipantLimit);
     
 }

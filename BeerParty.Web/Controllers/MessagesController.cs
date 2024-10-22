@@ -57,8 +57,8 @@ namespace BeerParty.Web.Controllers
             return Ok("Сообщение отправлено");
         }
         // Получение сообщений между пользователями
-        [HttpGet("conversation/{friendId}")]
-        public async Task<IActionResult> GetConversation(long friendId)
+        [HttpGet("conversation/{SendId}")]
+        public async Task<IActionResult> GetConversation(long SendId)
         {
             var userName = User.FindFirst(ClaimTypes.Name)?.Value;
             if (userName == null)
@@ -73,8 +73,8 @@ namespace BeerParty.Web.Controllers
             }
 
             var messages = await _context.Messages
-                .Where(m => (m.SenderId == currentUser.Id && m.RecipientId == friendId) ||
-                             (m.SenderId == friendId && m.RecipientId == currentUser.Id))
+                .Where(m => (m.SenderId == currentUser.Id && m.RecipientId == SendId) ||
+                             (m.SenderId == SendId && m.RecipientId == currentUser.Id))
                 .OrderBy(m => m.SentAt)
                 .Select(m => new { m.Sender!.Name, m.Content, m.SentAt })
                 .ToListAsync();
