@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обновить профиль</title>
+</head>
+<body>
+    <h1>Обновить профиль</h1>
+    <form id="updateProfileForm" enctype="multipart/form-data">
+        <label>Имя:</label>
+        <input type="text" name="FirstName" required><br>
+
+        <label>Фамилия:</label>
+        <input type="text" name="LastName" required><br>
+
+        <label>Биография:</label>
+        <textarea name="Bio"></textarea><br>
+
+        <label>Местоположение:</label>
+        <input type="text" name="Location"><br>
+
+        <label>Дата рождения:</label>
+        <input type="date" name="DateOfBirth" required><br>
+
+        <label>Пол:</label>
+        <select name="Gender" required>
+            <option value="Male">Мужчина</option>
+            <option value="Female">Женщина</option>
+            <option value="Other">Другой</option>
+        </select><br>
+
+        <label>Загрузить фото:</label>
+        <input type="file" name="Photo" accept="image/*"><br>
+
+        <label>Интересы:</label>
+        <select name="InterestIds" multiple required>
+            <option value="1">Интерес 1</option>
+            <option value="2">Интерес 2</option>
+            <option value="3">Интерес 3</option>
+            <!-- Добавьте дополнительные интересы по мере необходимости -->
+        </select><br>
+
+        <input type="submit" value="Обновить профиль">
+    </form>
+
+    <script>
+        document.getElementById('updateProfileForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+            const token = localStorage.getItem('token'); // Получаем токен
+
+            const response = await fetch('https://localhost:7222/api/Profile/update-profile', {
+                method: 'PUT',
+                body: formData,
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                alert('Профиль успешно обновлен!');
+            } else {
+                const errorMessage = await response.text();
+                console.log('Ошибка: ' + errorMessage);
+            }
+        });
+    </script>
+</body>
+</html>

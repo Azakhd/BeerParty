@@ -6,6 +6,7 @@ using System.Security.Claims;
 using BeerParty.BL.Dto;
 using Microsoft.AspNetCore.Authorization;
 using System;
+using BeerParty.Data.Enums;
 
 namespace BeerParty.Web.Controllers
 {
@@ -296,8 +297,94 @@ namespace BeerParty.Web.Controllers
 
             return Ok(new { message = "Вы успешно присоединились к встрече.", participant = newParticipant });
         }
+        [Authorize]
+        [HttpPost("like")]
+        public async Task<IActionResult> ToggleLike(long meetingId)
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = long.TryParse(userIdString, out var parsedUserId) ? parsedUserId : (long?)null;
+
+            if (userId == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
+            var like = await _context.Likes
+                .SingleOrDefaultAsync(l => l.UserId == userId && l.MeetingId == meetingId);
+
+            if (like != null)
+            {
+                // Удаляем лайк
+                _context.Likes.Remove(like);
+            }
+            else
+            {
+                // Добавляем лайк
+                var newLike = new Like { UserId = userId.Value, MeetingId = meetingId };
+                await _context.Likes.AddAsync(newLike);
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok("Изменения сохранены");
+        }
+
+        [HttpGet("recommended")] // Это делает его API-эндпоинтом
+        public async Task<IActionResult> GetRecommendedMeetings(int page = 0, int pageSize = 10)
+        {
+            var meetings = await GetRecommendedMeetingsAsync(pageSize);
+            return Ok(meetings);
+        }
+
+        // Если вы хотите, чтобы этот метод оставался приватным, переименуйте его, например, так:
+        private async Task<List<Meeting>> GetRecommendedMeetingsAsync(int count)
+        {
+            // Получаем встречи и сортируем их по количеству лайков и отзывов
+            var meetings = await _context.Meetings
+                .Select(m => new
+                {
+                    Meeting = m,
+                    LikesCount = m.Likes.Count(),
+                    ReviewsCount = m.Reviews.Count()
+                })
+                .OrderByDescending(m => m.LikesCount + m.ReviewsCount) // Сортировка по количеству лайков и отзывов
+                .Take(count) // Ограничиваем количество возвращаемых встреч
+                .ToListAsync(); // Выполняем запрос асинхронно
+
+            // Преобразуем результат в список встреч
+            return meetings.Select(m => m.Meeting).ToList(); // Здесь возвращаем Meeting
+        }
 
 
+        [HttpGet("personal-recommendations")]
+        public async Task<IActionResult> GetPersonalRecommendations(int page = 0, int pageSize = 10)
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = long.TryParse(userIdString, out var parsedUserId) ? parsedUserId : (long?)null;
+
+            if (userId == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
+            // Получаем встречи, которые пользователь отметил как "нравится"
+            var userLikes = await _context.Likes
+                .Where(l => l.UserId == userId)
+                .Select(l => l.MeetingId)
+                .ToListAsync();
+
+            // Получаем рекомендации на основе встреч, которые пользователь лайкнул
+            var recommendedMeetings = await _context.MeetingReviews
+                .Where(r => userLikes.Contains(r.MeetingId) && r.Rating >= 4) // Учитываем только встречи с высоким рейтингом
+                .Select(r => r.Meeting)
+                .Distinct()
+                .Include(m => m.Creator) // Загрузка создателя встречи
+                .Include(m => m.Participants) // Загрузка участников встречи
+                .Skip(page * pageSize) // Пропускаем встречи для пагинации
+                .Take(pageSize) // Ограничиваем количество возвращаемых встреч
+                .ToListAsync();
+
+            return Ok(recommendedMeetings);
+        }
 
     }
 }

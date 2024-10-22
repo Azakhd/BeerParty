@@ -1,5 +1,7 @@
 ﻿using BeerParty.Data.Enums;
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BeerParty.Data.Entities
 {
@@ -8,14 +10,16 @@ namespace BeerParty.Data.Entities
 
         public long UserId { get; set; }
         public User ?User { get; set; } // Связь с пользователем
-        public string? PhotoUrl { get; set; }
+        public string PhotoUrl { get; set; }
         public ICollection<Friend>? Friends { get; set; }
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
-        public string? Bio { get; set; }
-        public string? Location { get; set; }
-        public string? ProfilePictureUrl { get; set; }
-        public ICollection<Interest>? Interests { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Bio { get; set; }
+        public string Location { get; set; }
+        [NotMapped]
+        public IFormFile? Photo { get; set; }
+
+        public ICollection<Interest> Interests { get; set; }
         public double? Height { get; set; }
         
         [DataType(DataType.Date)]

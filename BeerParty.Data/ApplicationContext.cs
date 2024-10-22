@@ -1,4 +1,5 @@
 ﻿using BeerParty.Data.Entities;
+using BeerParty.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,9 @@ namespace BeerParty.Data
         public DbSet<Profile> Profiles { get; set; }
         public DbSet<MessageEntity> Messages { get; set; }
         public DbSet<Meeting> Meetings { get; set; }
+        public DbSet<MeetingReview> MeetingReviews { get; set; }
         public DbSet<MeetingParticipant> MeetingParticipants { get; set; }
+        public DbSet<Like> Likes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -62,16 +65,27 @@ namespace BeerParty.Data
                     e => e!.ToLower(),
                     e => e);
 
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.UserInterests)
-                .WithOne(ui => ui.User)
+            modelBuilder.Entity<MeetingReview>()
+          .HasOne(r => r.Meeting)
+          .WithMany(m => m.Reviews)
+          .HasForeignKey(r => r.MeetingId)
+          .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MeetingReview>()
+                .HasOne(r => r.User)
+                .WithMany(u => u.MeetingReviews)
+                .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
 
             modelBuilder.Entity<Profile>()
        .HasOne(p => p.User)
        .WithOne(u => u.Profile) // Указываем навигационное свойство User
        .HasForeignKey<Profile>(p => p.UserId)
        .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Profile>()
+        .Ignore(p => p.Photo);
 
             modelBuilder.Entity<MessageEntity>()
                 .HasOne(m => m.Sender)
@@ -114,7 +128,19 @@ namespace BeerParty.Data
                 .HasOne(mp => mp.User) // Указываем связь с пользователем
                 .WithMany() // У пользователя может быть много участников
                 .HasForeignKey(mp => mp.UserId); // Указываем внешний ключ
-        
-    }
+
+            modelBuilder.Entity<Like>()
+            .HasOne(l => l.User)
+            .WithMany(u => u.Likes)
+            .HasForeignKey(l => l.UserId)
+            .OnDelete(DeleteBehavior.Cascade); // Опционально
+
+
+            modelBuilder.Entity<Like>()
+                .HasOne(l => l.Meeting)
+                .WithMany(m => m.Likes)
+                .HasForeignKey(l => l.MeetingId)
+                .OnDelete(DeleteBehavior.Cascade); // Опционально
+        }
     }
 }

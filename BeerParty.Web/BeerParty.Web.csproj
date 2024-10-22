@@ -23,8 +23,5 @@
 		<ProjectReference Include="..\BeerParty.Data\BeerParty.Data.csproj" />
 		<ProjectReference Include="..\BL\BeerParty.BL.csproj" />
 	</ItemGroup>
-	<ItemGroup>
-	  <Folder Include="wwwroot\" />
-	</ItemGroup>
 
 </Project>

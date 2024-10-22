@@ -24,14 +24,16 @@ namespace BeerParty.Web.Controllers
         [HttpGet("get-profile")]
         public async Task<IActionResult> GetProfile()
         {
+            // Получение ID пользователя из токена
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userId = long.TryParse(userIdString, out var parsedUserId) ? parsedUserId : (long?)null;
 
-            if (userIdString == null)
+            if (userId == null)
             {
                 return Unauthorized("Пользователь не авторизован");
             }
 
+            // Поиск профиля, связанного с пользователем
             var profile = await _context.Profiles.SingleOrDefaultAsync(p => p.UserId == userId);
 
             if (profile == null)
@@ -39,11 +41,14 @@ namespace BeerParty.Web.Controllers
                 return NotFound("Профиль не найден");
             }
 
-            return Ok(profile); // Возвращаем профиль как JSON
+            // Возвращаем профиль как JSON, включая PhotoUrl
+            return Ok(profile);
         }
 
-        [HttpPut("UpdateProfile")]
-        public async Task<IActionResult> UpdateProfile(ProfileUpdateDto model)
+
+        [HttpPut("update-profile")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateProfile([FromForm] ProfileUpdateDto model)
         {
             // Получение ID пользователя из токена
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -67,21 +72,40 @@ namespace BeerParty.Web.Controllers
             profile.LastName = model.LastName;
             profile.Bio = model.Bio;
             profile.Location = model.Location;
-            profile.PhotoUrl = model.PhotoUrl;
-            profile.Height = model.Height;
-            profile.DateOfBirth = model.DateOfBirth; // Установка даты рождения
-            profile.Gender = model.Gender; // Установка пола
+            profile.DateOfBirth = model.DateOfBirth;
+            profile.Gender = model.Gender;
 
-            // Обновление интересов, если необходимо
-            if (model.InterestIds != null)
+            // Обработка загруженного фото
+            if (model.Photo != null && model.Photo.Length > 0)
             {
-                profile.Interests = await _context.Interests
-                    .Where(i => model.InterestIds.Contains(i.Id)).ToListAsync();
+                var uploadsFolder = Path.Combine("Uploads", "ProfilePictures");
+                var fileName = Guid.NewGuid() + Path.GetExtension(model.Photo.FileName);
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                Directory.CreateDirectory(uploadsFolder);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.Photo.CopyToAsync(stream);
+                }
+
+                profile.PhotoUrl = $"{Request.Scheme}://{Request.Host}/{uploadsFolder}/{fileName}";
+            }
+
+            // Обновление интересов
+            profile.Interests.Clear(); // Очистить текущие интересы
+            foreach (var interestId in model.InterestIds)
+            {
+                var interest = await _context.Interests.FindAsync(interestId);
+                if (interest != null)
+                {
+                    profile.Interests.Add(interest);
+                }
             }
 
             // Сохранение изменений
             await _context.SaveChangesAsync();
-            return Ok("Профиль обновлён"); // Сообщение об успешном обновлении
+            return Ok("Профиль обновлён");
         }
 
     }

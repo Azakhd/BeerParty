@@ -3,6 +3,7 @@ using System;
 using BeerParty.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BeerParty.Data.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20241022190828_Recommendations")]
+    partial class Recommendations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -72,29 +75,6 @@ namespace BeerParty.Data.Migrations
                     b.HasIndex("ProfileId");
 
                     b.ToTable("Interests");
-                });
-
-            modelBuilder.Entity("BeerParty.Data.Entities.Like", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("MeetingId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MeetingId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Likes");
                 });
 
             modelBuilder.Entity("BeerParty.Data.Entities.Meeting", b =>
@@ -171,6 +151,7 @@ namespace BeerParty.Data.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Comment")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<long>("MeetingId")
@@ -321,6 +302,21 @@ namespace BeerParty.Data.Migrations
                     b.ToTable("UserInterests");
                 });
 
+            modelBuilder.Entity("BeerParty.Data.Enums.UserFavoriteMeeting", b =>
+                {
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("MeetingId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("UserId", "MeetingId");
+
+                    b.HasIndex("MeetingId");
+
+                    b.ToTable("UserFavoriteMeetings");
+                });
+
             modelBuilder.Entity("BeerParty.Data.Entities.Friend", b =>
                 {
                     b.HasOne("BeerParty.Data.Entities.User", "FriendUser")
@@ -349,25 +345,6 @@ namespace BeerParty.Data.Migrations
                     b.HasOne("BeerParty.Data.Entities.Profile", null)
                         .WithMany("Interests")
                         .HasForeignKey("ProfileId");
-                });
-
-            modelBuilder.Entity("BeerParty.Data.Entities.Like", b =>
-                {
-                    b.HasOne("BeerParty.Data.Entities.Meeting", "Meeting")
-                        .WithMany("Likes")
-                        .HasForeignKey("MeetingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BeerParty.Data.Entities.User", "User")
-                        .WithMany("Likes")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Meeting");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BeerParty.Data.Entities.Meeting", b =>
@@ -474,6 +451,25 @@ namespace BeerParty.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("BeerParty.Data.Enums.UserFavoriteMeeting", b =>
+                {
+                    b.HasOne("BeerParty.Data.Entities.Meeting", "Meeting")
+                        .WithMany("UserFavorites")
+                        .HasForeignKey("MeetingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BeerParty.Data.Entities.User", "User")
+                        .WithMany("FavoriteMeetings")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Meeting");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("BeerParty.Data.Entities.Interest", b =>
                 {
                     b.Navigation("UserInterests");
@@ -481,11 +477,11 @@ namespace BeerParty.Data.Migrations
 
             modelBuilder.Entity("BeerParty.Data.Entities.Meeting", b =>
                 {
-                    b.Navigation("Likes");
-
                     b.Navigation("Participants");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("UserFavorites");
                 });
 
             modelBuilder.Entity("BeerParty.Data.Entities.Profile", b =>
@@ -497,7 +493,7 @@ namespace BeerParty.Data.Migrations
 
             modelBuilder.Entity("BeerParty.Data.Entities.User", b =>
                 {
-                    b.Navigation("Likes");
+                    b.Navigation("FavoriteMeetings");
 
                     b.Navigation("MeetingReviews");
 

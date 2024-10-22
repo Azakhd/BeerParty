@@ -1,5 +1,3 @@
-
-
 using BeerParty.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -10,15 +8,17 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Добавляем службы
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllersWithViews();
 
-
+// Настройка Swagger
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Chat API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "BeerParty API", Version = "v1" });
 
     var securityScheme = new OpenApiSecurityScheme
     {
@@ -49,10 +49,13 @@ builder.Services.AddSwaggerGen(c =>
 
     c.AddSecurityRequirement(securityRequirement);
 });
+
+// Добавление контекста базы данных
 builder.Services.AddDbContext<ApplicationContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         b => b.MigrationsAssembly("BeerParty.Data")));
 
+// Настройка JWT
 var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
 if (key.Length < 32)
 {
@@ -81,20 +84,35 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Добавление CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", builder =>
+    {
+        builder.WithOrigins("https://localhost:5001") // Укажите ваши разрешенные источники
+               .AllowAnyHeader()
+               .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
+
+// Настройки приложения
 app.UseStaticFiles();
 app.UseFileServer();
-app.UseCors("AllowSpecificOrigin");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 app.UseRouting();
 app.UseHttpsRedirection();
+app.UseCors("AllowSpecificOrigin");
 app.UseAuthentication(); // Должен быть перед UseAuthorization
 app.UseAuthorization();
+
 app.MapHub<ChatHub>("/chatHub");
 app.MapControllers();
 

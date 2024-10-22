@@ -18,5 +18,7 @@ namespace BeerParty.Data.Entities
         public bool IsPublic { get; set; } // Новое свойство
         [JsonIgnore]
         public List<MeetingParticipant> Participants { get; set; } = new List<MeetingParticipant>(); // Участники встречи
+        public virtual ICollection<MeetingReview> Reviews { get; set; }
+        public virtual ICollection<Like> Likes { get; set; } = new List<Like>();
     }
 }

@@ -18,9 +18,10 @@ namespace BeerParty.Data.Entities
         [Required]
         public DateTime CreatedAt { get; set; }
         public List<Role> Roles { get; set; } = new List<Role>();
-        public Profile? Profile { get; set; }
+        public virtual Profile Profile { get; set; }
+        public virtual ICollection<MeetingReview> MeetingReviews { get; set; }
 
-
+        public ICollection<Like> Likes { get; set; }
 
     }
 
