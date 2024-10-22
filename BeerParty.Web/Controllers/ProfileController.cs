@@ -42,9 +42,10 @@ namespace BeerParty.Web.Controllers
             return Ok(profile); // Возвращаем профиль как JSON
         }
 
-        [HttpPost("UpdateProfile")]
+        [HttpPut("UpdateProfile")]
         public async Task<IActionResult> UpdateProfile(ProfileUpdateDto model)
         {
+            // Получение ID пользователя из токена
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userId = long.TryParse(userIdString, out var parsedUserId) ? parsedUserId : (long?)null;
 
@@ -53,6 +54,7 @@ namespace BeerParty.Web.Controllers
                 return Unauthorized("Пользователь не авторизован");
             }
 
+            // Поиск профиля, связанного с пользователем
             var profile = await _context.Profiles.SingleOrDefaultAsync(p => p.UserId == userId);
 
             if (profile == null)
@@ -60,7 +62,7 @@ namespace BeerParty.Web.Controllers
                 return NotFound("Профиль не найден");
             }
 
-            // Обновите профиль
+            // Обновление полей профиля
             profile.FirstName = model.FirstName;
             profile.LastName = model.LastName;
             profile.Bio = model.Bio;
@@ -70,15 +72,16 @@ namespace BeerParty.Web.Controllers
             profile.DateOfBirth = model.DateOfBirth; // Установка даты рождения
             profile.Gender = model.Gender; // Установка пола
 
-            // Обновите интересы, если необходимо
+            // Обновление интересов, если необходимо
             if (model.InterestIds != null)
             {
                 profile.Interests = await _context.Interests
                     .Where(i => model.InterestIds.Contains(i.Id)).ToListAsync();
             }
 
+            // Сохранение изменений
             await _context.SaveChangesAsync();
-            return Ok("Профиль обновлён"); // Возвращаем сообщение об успешном обновлении
+            return Ok("Профиль обновлён"); // Сообщение об успешном обновлении
         }
 
     }

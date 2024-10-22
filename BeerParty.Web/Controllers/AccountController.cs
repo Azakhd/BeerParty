@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -24,42 +25,42 @@ namespace BeerParty.Web.Controllers
             _configuration = configuration;
         }
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterUserDto model)
+        public async Task<IActionResult> Register(RegisterUserDto model)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == model.Email))
+            if (string.IsNullOrEmpty(model.Name) || model.Name.Length < 2 || model.Name.Length > 50)
             {
-                return BadRequest("Пользователь с таким email уже существует.");
+                return BadRequest("Имя должно быть от 2 до 50 символов.");
             }
 
+            if (string.IsNullOrEmpty(model.Email) || !new EmailAddressAttribute().IsValid(model.Email))
+            {
+                return BadRequest("Некорректный формат Email.");
+            }
+
+            if (string.IsNullOrEmpty(model.Password) || model.Password.Length < 6 || model.Password.Length > 100)
+            {
+                return BadRequest("Пароль должен быть от 6 до 100 символов.");
+            }
+
+            // Проверка на существование пользователя с таким email
+            var existingUser = await _context.Users.SingleOrDefaultAsync(u => u.Email == model.Email);
+            if (existingUser != null)
+            {
+                return Conflict("Пользователь с таким email уже существует.");
+            }
+
+            // Создание нового пользователя
             var user = new User
             {
                 Name = model.Name,
                 Email = model.Email,
-                CreatedAt = DateTime.UtcNow
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password) // Хешируем пароль
             };
 
-            // Хеширование пароля
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
-
-            // Присваиваем роль "User" (ID 3) напрямую, без проверки в базе данных
-            user.Roles.Add(Role.User);// Присваиваем роль с ID 3
-
-            // Добавляем пользователя в базу данных
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // Создаем профиль для пользователя
-            var profile = new Profile
-            {
-                UserId = user.Id,
-                FirstName = model.Name,
-                // другие поля по умолчанию
-            };
-
-            _context.Profiles.Add(profile);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "User registered successfully" });
+            return Ok(new { message = "Регистрация успешна", userId = user.Id });
         }
 
 
@@ -139,10 +140,10 @@ namespace BeerParty.Web.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpPost("update-role")]
+        [HttpPut("update-role/{userId}")]
         public async Task<IActionResult> UpdateUserRole(long userId, Role newRole)
         {
-            // Проверка, что текущий пользователь является администратором
+            // Получение ID текущего пользователя из токена
             var currentUserIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(currentUserIdString))
             {
@@ -159,7 +160,7 @@ namespace BeerParty.Web.Controllers
             // Изменение роли пользователя
             if (!user.Roles.Contains(newRole))
             {
-                user.Roles.Clear(); // Очистим предыдущие роли (если у вас только одна роль)
+                user.Roles.Clear(); // Очистим предыдущие роли, если разрешена только одна роль
                 user.Roles.Add(newRole); // Добавим новую роль
             }
 
