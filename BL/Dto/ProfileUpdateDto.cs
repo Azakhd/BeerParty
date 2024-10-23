@@ -9,17 +9,17 @@ using System.Threading.Tasks;
 namespace BeerParty.BL.Dto
 {
     public record ProfileUpdateDto(
-     string FirstName,
-     string LastName,
-     List<long> InterestIds,
-     double Height,
-     IFormFile? Photo,
-     string? PhotoUrl,
-     string Bio,
-     string Location,
-     DateTime DateOfBirth,
-     Gender Gender
- );
+    string? FirstName,
+    string? LastName,
+    List<long>? InterestIds,
+    double Height,
+    IFormFile? Photo,
+    string Bio,
+    string Location,
+    DateTime DateOfBirth,
+    Gender? Gender,
+    bool RemovePhoto
+);
 
 
 }

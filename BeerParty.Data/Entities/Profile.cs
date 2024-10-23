@@ -10,7 +10,7 @@ namespace BeerParty.Data.Entities
 
         public long UserId { get; set; }
         public User ?User { get; set; } // Связь с пользователем
-        public string PhotoUrl { get; set; }
+        public string? PhotoUrl { get; set; }
         public ICollection<Friend>? Friends { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
@@ -19,7 +19,7 @@ namespace BeerParty.Data.Entities
         [NotMapped]
         public IFormFile? Photo { get; set; }
 
-        public ICollection<Interest> Interests { get; set; }
+        public virtual ICollection<Interest> Interests { get; set; } = new List<Interest>(); 
         public double? Height { get; set; }
         
         [DataType(DataType.Date)]

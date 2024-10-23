@@ -3,6 +3,7 @@ using System;
 using BeerParty.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BeerParty.Data.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20241023215318_AddPhotourlMeeting")]
+    partial class AddPhotourlMeeting
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -120,14 +123,8 @@ namespace BeerParty.Data.Migrations
                     b.Property<bool>("IsPublic")
                         .HasColumnType("boolean");
 
-                    b.Property<double>("Latitude")
-                        .HasColumnType("double precision");
-
                     b.Property<string>("Location")
                         .HasColumnType("text");
-
-                    b.Property<double>("Longitude")
-                        .HasColumnType("double precision");
 
                     b.Property<DateTime>("MeetingTime")
                         .HasColumnType("timestamp with time zone");

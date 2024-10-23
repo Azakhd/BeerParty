@@ -15,7 +15,10 @@ namespace BeerParty.Data.Entities
         public string? Description { get; set; } // Описание встречи
         public MeetingCategory Category { get; set; }
         public short? ParticipantLimit {get; set;}
+        public string PhotoUrl { get; set; }
         public bool IsPublic { get; set; } // Новое свойство
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
         [JsonIgnore]
         public List<MeetingParticipant> Participants { get; set; } = new List<MeetingParticipant>(); // Участники встречи
         public virtual ICollection<MeetingReview> Reviews { get; set; }

@@ -2,6 +2,7 @@ using BeerParty.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
@@ -84,21 +85,15 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Добавление CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowSpecificOrigin", builder =>
-    {
-        builder.WithOrigins("https://localhost:5001") // Укажите ваши разрешенные источники
-               .AllowAnyHeader()
-               .AllowAnyMethod();
-    });
-});
 
 var app = builder.Build();
 
-// Настройки приложения
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "..", "BeerParty.Data", "Uploads")),
+    RequestPath = "/uploads"
+});
+
 app.UseFileServer();
 
 if (app.Environment.IsDevelopment())
@@ -109,7 +104,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 app.UseHttpsRedirection();
-app.UseCors("AllowSpecificOrigin");
 app.UseAuthentication(); // Должен быть перед UseAuthorization
 app.UseAuthorization();
 
