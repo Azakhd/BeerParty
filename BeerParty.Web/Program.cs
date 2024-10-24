@@ -1,7 +1,6 @@
 using BeerParty.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -104,7 +103,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 app.UseHttpsRedirection();
-app.UseAuthentication(); // Должен быть перед UseAuthorization
+app.UseAuthentication(); 
 app.UseAuthorization();
 
 app.MapHub<ChatHub>("/chatHub");

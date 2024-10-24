@@ -1,5 +1,6 @@
 ﻿using BeerParty.Data.Enums;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 namespace BeerParty.Data.Entities
 {
@@ -17,8 +18,12 @@ namespace BeerParty.Data.Entities
         public short? ParticipantLimit {get; set;}
         public string PhotoUrl { get; set; }
         public bool IsPublic { get; set; } // Новое свойство
+        [Range(-90, 90)]
         public double Latitude { get; set; }
+
+        [Range(-180, 180)]
         public double Longitude { get; set; }
+        public double? Radius { get; set; }
         [JsonIgnore]
         public List<MeetingParticipant> Participants { get; set; } = new List<MeetingParticipant>(); // Участники встречи
         public virtual ICollection<MeetingReview> Reviews { get; set; }

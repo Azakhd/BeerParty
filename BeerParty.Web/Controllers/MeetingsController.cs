@@ -24,7 +24,7 @@ namespace BeerParty.Web.Controllers
         public async Task<IActionResult> CreateMeeting([FromForm] CreateMeetingDto dto)
         {
             if (dto == null)
-                return BadRequest();
+                return BadRequest("Данные встречи не могут быть пустыми.");
 
             var creatorIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (creatorIdClaim == null)
@@ -33,10 +33,10 @@ namespace BeerParty.Web.Controllers
             var creatorId = int.Parse(creatorIdClaim.Value);
             var participants = new List<MeetingParticipant>();
 
+            // Проверяем существование пользователей
             foreach (var participantId in dto.ParticipantIds)
             {
-                var userExists = await _context.Users.AnyAsync(u => u.Id == participantId);
-                if (userExists)
+                if (await _context.Users.AnyAsync(u => u.Id == participantId))
                 {
                     participants.Add(new MeetingParticipant
                     {
@@ -50,16 +50,34 @@ namespace BeerParty.Web.Controllers
                 }
             }
 
+            // Проверяем лимит участников
             if (dto.ParticipantLimit.HasValue && dto.ParticipantLimit.Value < participants.Count)
             {
                 return BadRequest($"Количество участников превышает лимит в {dto.ParticipantLimit.Value}.");
+            }
+
+            // Проверяем широту и долготу
+            if (!double.TryParse(dto.Latitude.ToString(), out double latitude) ||
+                !double.TryParse(dto.Longitude.ToString(), out double longitude))
+            {
+                return BadRequest("Неверный формат широты или долготы.");
+            }
+
+            // Проверка допустимых значений для широты и долготы
+            if (latitude < -90 || latitude > 90)
+            {
+                return BadRequest("Широта должна быть в диапазоне от -90 до 90 градусов.");
+            }
+            if (longitude < -180 || longitude > 180)
+            {
+                return BadRequest("Долгота должна быть в диапазоне от -180 до 180 градусов.");
             }
 
             using (var transaction = await _context.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    long? coAuthorId = dto.CoAuthorId.HasValue && dto.CoAuthorId.Value != 0 ? dto.CoAuthorId.Value : (long?)null;
+                    long? coAuthorId = dto.CoAuthorId > 0 ? dto.CoAuthorId : (long?)null;
 
                     var meeting = new Meeting
                     {
@@ -72,8 +90,10 @@ namespace BeerParty.Web.Controllers
                         CoAuthorId = coAuthorId,
                         Category = dto.Category,
                         ParticipantLimit = dto.ParticipantLimit,
-                        Latitude = dto.Latitude,
-                        Longitude = dto.Longitude// Устанавливаем лимит участников
+                        Latitude = latitude,
+                        Longitude = longitude,
+                        // Устанавливаем значение радиуса
+                        Radius = dto.Radius
                     };
 
                     // Обработка загрузки изображения
@@ -104,6 +124,7 @@ namespace BeerParty.Web.Controllers
                     _context.Meetings.Add(meeting);
                     await _context.SaveChangesAsync();
 
+                    // Сохранение участников встречи
                     foreach (var participant in participants)
                     {
                         participant.MeetingId = meeting.Id;
@@ -120,13 +141,30 @@ namespace BeerParty.Web.Controllers
 
                     return CreatedAtAction(nameof(GetMeeting), new { id = meeting.Id }, createdMeeting);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    return StatusCode(500, "Произошла ошибка при создании встречи.");
+                    return StatusCode(500, $"Произошла ошибка при создании встречи: {ex.Message}");
                 }
             }
         }
+
+        [HttpGet("GetMeetingsWithLocation")]
+        public async Task<IActionResult> GetMeetingsWithLocation()
+        {
+            var meetings = await _context.Meetings
+                .Select(m => new
+                {
+                    m.Id,
+                    m.Title,
+                    m.Latitude,
+                    m.Longitude // Убедитесь, что у встреч есть координаты
+                })
+                .ToListAsync();
+
+            return Ok(meetings);
+        }
+
         [HttpGet("FindMeetings")]
         public async Task<IActionResult> FindMeetings(double latitude, double longitude, double radius)
         {
@@ -135,16 +173,14 @@ namespace BeerParty.Web.Controllers
             // Получаем ID пользователя из токена
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null)
-                return Unauthorized(); // Если не удается получить ID пользователя, возвращаем 401
+                return Unauthorized();
 
             var userId = long.Parse(userIdClaim.Value);
 
-            // Получаем все встречи, доступные текущему пользователю
             var meetings = await _context.Meetings
                 .Where(m => m.IsPublic || m.Participants.Any(p => p.UserId == userId))
                 .ToListAsync();
 
-            // Фильтруем встречи по геолокации
             var filteredMeetings = meetings
                 .Where(m =>
                 {
@@ -156,12 +192,13 @@ namespace BeerParty.Web.Controllers
                     var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
                     var distance = EarthRadius * c;
 
-                    return distance <= radius; // Возвращаем встречи, находящиеся в радиусе
+                    return distance <= radius;
                 })
                 .ToList();
 
             return Ok(filteredMeetings);
         }
+
         // Подтверждение участия в встрече
         [HttpPost("{meetingId}/participants/confirm")]
         [Authorize]
@@ -316,37 +353,34 @@ namespace BeerParty.Web.Controllers
                 return Forbid();
             }
 
-            // Обновляем поля встречи
-            meeting.Title = meetingUpdateDto.Title ?? meeting.Title;
+            // Обновляем поля встречи с использованием тернарного оператора
+            meeting.Title = !string.IsNullOrEmpty(meetingUpdateDto.Title) ? meetingUpdateDto.Title : meeting.Title;
             meeting.MeetingTime = meetingUpdateDto.MeetingTime != default ? meetingUpdateDto.MeetingTime : meeting.MeetingTime;
-            meeting.Location = meetingUpdateDto.Location ?? meeting.Location;
-            meeting.Description = meetingUpdateDto.Description ?? meeting.Description;
-            meeting.IsPublic = meetingUpdateDto.IsPublic;
+            meeting.Location = !string.IsNullOrEmpty(meetingUpdateDto.Location) ? meetingUpdateDto.Location : meeting.Location;
+            meeting.Description = !string.IsNullOrEmpty(meetingUpdateDto.Description) ? meetingUpdateDto.Description : meeting.Description;
+            meeting.IsPublic = meetingUpdateDto.IsPublic; // Обновляем булевое значение напрямую
 
-            if (meetingUpdateDto.ParticipantLimit.HasValue)
-            {
-                meeting.ParticipantLimit = meetingUpdateDto.ParticipantLimit.Value; // Обновляем лимит участников
-            }
+            meeting.ParticipantLimit = meetingUpdateDto.ParticipantLimit.HasValue ? meetingUpdateDto.ParticipantLimit.Value : meeting.ParticipantLimit;
+
+            // Обновление широты, долготы и радиуса
+            meeting.Latitude = meetingUpdateDto.Latitude.HasValue ? meetingUpdateDto.Latitude.Value : meeting.Latitude;
+            meeting.Longitude = meetingUpdateDto.Longitude.HasValue ? meetingUpdateDto.Longitude.Value : meeting.Longitude;
+            meeting.Radius = meetingUpdateDto.Radius.HasValue ? meetingUpdateDto.Radius.Value : meeting.Radius;
 
             // Обработка загрузки фотографии для встречи
             if (meetingUpdateDto.Photo != null && meetingUpdateDto.Photo.Length > 0)
             {
                 try
                 {
-                    // Создание уникального имени файла
                     var fileName = $"{id}_{Guid.NewGuid()}{Path.GetExtension(meetingUpdateDto.Photo.FileName)}";
-
-                    // Путь к папке Uploads в проекте BeerParty.Data
                     var meetingFolder = Path.Combine(Directory.GetCurrentDirectory(), "..", "BeerParty.Data", "Uploads", "MeetingPictures");
                     var filePath = Path.Combine(meetingFolder, fileName);
 
-                    // Создать папку, если она не существует
                     if (!Directory.Exists(meetingFolder))
                     {
                         Directory.CreateDirectory(meetingFolder);
                     }
 
-                    // Удаление старого фото, если оно существует
                     if (!string.IsNullOrEmpty(meeting.PhotoUrl))
                     {
                         var oldPhotoPath = Path.Combine(meetingFolder, Path.GetFileName(meeting.PhotoUrl));
@@ -356,13 +390,11 @@ namespace BeerParty.Web.Controllers
                         }
                     }
 
-                    // Сохранение нового файла
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
                         await meetingUpdateDto.Photo.CopyToAsync(stream);
                     }
 
-                    // URL для доступа к загруженному файлу
                     meeting.PhotoUrl = $"{Request.Scheme}://{Request.Host}/uploads/MeetingPictures/{fileName}";
                 }
                 catch (Exception ex)

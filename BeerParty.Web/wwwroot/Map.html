@@ -1,0 +1,143 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта Кыргызстана</title>
+
+    <!-- Подключаем стили для карты -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+    <!-- Добавляем стили для страницы -->
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+
+        .input-container {
+            margin-top: 10px;
+        }
+
+        input {
+            margin: 5px 0;
+            padding: 8px;
+            width: 300px;
+        }
+
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Карта Кыргызстана</h2>
+
+    <!-- Блок для отображения карты -->
+    <div id="map"></div>
+
+    <!-- Ввод широты, долготы -->
+    <div class="input-container">
+        <label for="latitude">Широта:</label><br>
+        <input type="text" id="latitude" placeholder="Введите широту"><br>
+
+        <label for="longitude">Долгота:</label><br>
+        <input type="text" id="longitude" placeholder="Введите долготу"><br>
+
+        <button onclick="setMarkerFromInput()">Установить маркер по координатам</button>
+        <button onclick="getUserLocation()">Определить мое местоположение</button>
+    </div>
+
+    <!-- Подключаем скрипт для работы с картой Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <script>
+        // Инициализируем карту с фокусом на Кыргызстан
+        var map = L.map('map').setView([41.7151, 74.9493], 7); // Широта и долгота для Кыргызстана
+
+        // Добавляем тайлы карты (используем OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Переменная для хранения маркера
+        var marker;
+
+        // Функция для установки маркера по введенной широте и долготе
+        function setMarkerFromInput() {
+            var lat = document.getElementById('latitude').value;
+            var lon = document.getElementById('longitude').value;
+
+            // Если маркер уже есть, удаляем его
+            if (marker) {
+                map.removeLayer(marker);
+            }
+
+            // Устанавливаем новый маркер
+            marker = L.marker([lat, lon]).addTo(map)
+                .bindPopup('Местоположение: ' + lat + ', ' + lon)
+                .openPopup();
+
+            // Центрируем карту на новое местоположение
+            map.setView([lat, lon], 10);
+        }
+
+        // Функция для установки маркера по клику на карту
+        function onMapClick(e) {
+            var lat = e.latlng.lat;
+            var lon = e.latlng.lng;
+
+            // Если маркер уже есть, удаляем его
+            if (marker) {
+                map.removeLayer(marker);
+            }
+
+            // Устанавливаем маркер на месте клика
+            marker = L.marker([lat, lon]).addTo(map)
+                .bindPopup('Местоположение: ' + lat.toFixed(5) + ', ' + lon.toFixed(5))
+                .openPopup();
+
+            // Обновляем поля с широтой и долготой
+            document.getElementById('latitude').value = lat.toFixed(5);
+            document.getElementById('longitude').value = lon.toFixed(5);
+        }
+
+        // Добавляем обработчик кликов на карту
+        map.on('click', onMapClick);
+
+        // Функция для определения местоположения пользователя
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    var lat = position.coords.latitude;
+                    var lon = position.coords.longitude;
+
+                    // Если маркер уже есть, удаляем его
+                    if (marker) {
+                        map.removeLayer(marker);
+                    }
+
+                    // Устанавливаем маркер на месте текущего местоположения пользователя
+                    marker = L.marker([lat, lon]).addTo(map)
+                        .bindPopup('Ваше местоположение: ' + lat.toFixed(5) + ', ' + lon.toFixed(5))
+                        .openPopup();
+
+                    // Центрируем карту на текущем местоположении
+                    map.setView([lat, lon], 10);
+
+                    // Обновляем поля с широтой и долготой
+                    document.getElementById('latitude').value = lat.toFixed(5);
+                    document.getElementById('longitude').value = lon.toFixed(5);
+                }, function () {
+                    alert('Не удалось определить ваше местоположение.');
+                });
+            } else {
+                alert('Геолокация не поддерживается вашим браузером.');
+            }
+        }
+    </script>
+
+</body>
+</html>
