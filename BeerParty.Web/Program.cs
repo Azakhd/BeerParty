@@ -15,17 +15,6 @@ builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllersWithViews();
 
-// Добавляем поддержку CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", builder =>
-    {
-        builder.AllowAnyOrigin() // Разрешает все источники (не рекомендуется для продакшена)
-               .AllowAnyMethod() // Разрешает любые HTTP-методы (GET, POST и т.д.)
-               .AllowAnyHeader(); // Разрешает любые заголовки
-    });
-});
-
 // Настройка Swagger
 builder.Services.AddSwaggerGen(c =>
 {
@@ -57,6 +46,11 @@ builder.Services.AddSwaggerGen(c =>
             new List<string>()
         }
     };
+
+
+
+
+
 
     c.AddSecurityRequirement(securityRequirement);
 });
@@ -95,6 +89,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+
 var app = builder.Build();
 
 app.UseStaticFiles(new StaticFileOptions
@@ -113,7 +108,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 app.UseHttpsRedirection();
-app.UseCors("AllowAll"); // Включаем CORS-политику
 app.UseAuthentication();
 app.UseAuthorization();
 
