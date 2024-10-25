@@ -62,10 +62,12 @@ namespace BeerParty.Web.Controllers
                 users = users.Where(u => u.Profile!.Height <= request.MaxHeight.Value);
             }
 
-            if (request.Preference != null) 
+            if (request.Preference != null)
             {
-                users = users.Where(u => u.Profile!.LookingFor == request.Preference); 
+                users = users.Where(u => u.Profile!.LookingFor == request.Preference);
             }
+
+
 
             var filteredUsers = await users.ToListAsync();
             return Ok(filteredUsers); 
