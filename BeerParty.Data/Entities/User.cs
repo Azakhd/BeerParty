@@ -25,6 +25,8 @@ namespace BeerParty.Data.Entities
 
     }
 
+   
+
 
 }
 
