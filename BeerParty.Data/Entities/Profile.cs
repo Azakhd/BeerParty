@@ -16,6 +16,7 @@ namespace BeerParty.Data.Entities
         public string LastName { get; set; }
         public string Bio { get; set; }
         public string Location { get; set; }
+
         [NotMapped]
         public IFormFile? Photo { get; set; }
 

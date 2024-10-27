@@ -5,8 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using BeerParty.BL.Dto;
 using Microsoft.AspNetCore.Authorization;
-using System;
-using BeerParty.Data.Enums;
 
 namespace BeerParty.Web.Controllers
 {
@@ -30,7 +28,7 @@ namespace BeerParty.Web.Controllers
             if (creatorIdClaim == null)
                 return Unauthorized();
 
-            var creatorId = int.Parse(creatorIdClaim.Value);
+            var creatorId = long.Parse(creatorIdClaim.Value);
             var participants = new List<MeetingParticipant>();
 
             // Проверяем существование пользователей
