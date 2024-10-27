@@ -23,7 +23,10 @@ namespace BeerParty.Data.Entities
         public virtual Profile Profile { get; set; }
         public virtual ICollection<MeetingReview> MeetingReviews { get; set; }
 
-        public ICollection<Like> Likes { get; set; }
+        public ICollection<MeetingLike> MeetingLikes { get; set; }
+
+        // Связь с лайками для обзоров встреч
+        public ICollection<MeetingReviewLike> MeetingReviewLikes { get; set; }
 
     }
 

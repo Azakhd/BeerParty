@@ -9,13 +9,13 @@ namespace BeerParty.BL.Dto
 {
     public record MeetingUpdateDto(
       string? Title,
-      DateTime MeetingTime,
+      DateTime? MeetingTime,
       string? Location,
       string? Description,
-      bool IsPublic,
+      bool? IsPublic,
       long? CoAuthorId,
       short? ParticipantLimit,
-      IFormFile Photo,
+      IFormFile? Photo,
       double? Latitude,   // Новое поле для широты
       double? Longitude,  // Новое поле для долготы
       double? Radius      // Новое поле для радиуса

@@ -19,6 +19,6 @@ namespace BeerParty.Data.Entities
         public string? Comment { get; set; } // Комментарий к встрече
 
         // Новый свойство для хранения лайков
-        public ICollection<Like> Likes { get; set; } = new List<Like>();
+        public ICollection<MeetingReviewLike> MeetingReviewLikes { get; set; }
     }
 }

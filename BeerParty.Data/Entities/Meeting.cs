@@ -27,6 +27,9 @@ namespace BeerParty.Data.Entities
         [JsonIgnore]
         public List<MeetingParticipant> Participants { get; set; } = new List<MeetingParticipant>(); // Участники встречи
         public virtual ICollection<MeetingReview> Reviews { get; set; }
-        public virtual ICollection<Like> Likes { get; set; } = new List<Like>();
+        public ICollection<MeetingLike> MeetingLikes { get; set; } = new List<MeetingLike>();
+
+        // Связь с отзывами
+        public ICollection<MeetingReview> MeetingReviews { get; set; } = new List<MeetingReview>();
     }
 }

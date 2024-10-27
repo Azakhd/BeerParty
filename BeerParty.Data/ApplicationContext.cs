@@ -23,7 +23,8 @@ namespace BeerParty.Data
         public DbSet<MessageEntity> Messages { get; set; }
         public DbSet<Meeting> Meetings { get; set; }
         public DbSet<MeetingReview> MeetingReviews { get; set; }
-        public DbSet<Like> Likes { get; set; }
+        public DbSet<MeetingLike> MeetingLikes { get; set; } // Лайки для встреч
+        public DbSet<MeetingReviewLike> MeetingReviewLikes { get; set; } // Лайки для обзоров встреч
         public DbSet<MeetingParticipant> MeetingParticipants { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -129,27 +130,19 @@ namespace BeerParty.Data
                 .WithMany() // У пользователя может быть много участников
                 .HasForeignKey(mp => mp.UserId); // Указываем внешний ключ
 
-            modelBuilder.Entity<Like>()
-             .HasKey(l => l.Id); // Убедитесь, что у вас есть первичный ключ
+    
 
-            modelBuilder.Entity<Like>()
-        .HasOne(l => l.User)
-        .WithMany() // Нет навигационного свойства для Likes в User
-        .HasForeignKey(l => l.UserId)
-        .OnDelete(DeleteBehavior.Cascade); // Удаление пользователя приведет к удалению связанных лайков
+            modelBuilder.Entity<User>()
+          .HasMany(u => u.MeetingLikes)
+          .WithOne(ml => ml.User)
+          .HasForeignKey(ml => ml.UserId);
 
-            modelBuilder.Entity<Like>()
-      .HasOne(l => l.MeetingReview)
-      .WithMany(mr => mr.Likes)
-      .HasForeignKey(l => l.MeetingReviewId)
-      .OnDelete(DeleteBehavior.Cascade);
+            // Связь между User и MeetingReviewLikes
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.MeetingReviewLikes)
+                .WithOne(ml => ml.User)
+                .HasForeignKey(ml => ml.UserId);
 
-            // Настройка связи между Like и Meeting
-            modelBuilder.Entity<Like>()
-                .HasOne(l => l.Meeting)
-                .WithMany() // Нет навигационного свойства для Likes в Meeting
-                .HasForeignKey(l => l.MeetingId)
-                .OnDelete(DeleteBehavior.Cascade); // Удаление встречи приведет к удалению связанных лайков
         }
     }
 }

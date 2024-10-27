@@ -28,6 +28,7 @@ namespace BeerParty.Data.Entities
         public int? Age => CalculateAge();
         public Gender Gender { get; set; }
         public PreferenceType? LookingFor { get; set; }
+
         private int? CalculateAge()
         {
             if (DateOfBirth == default) return null; // Если дата рождения не задана, возвращаем null

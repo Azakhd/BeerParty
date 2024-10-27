@@ -290,7 +290,7 @@ namespace BeerParty.Web.Controllers
                     meeting.PhotoUrl, // Добавляем фото встречи в ответ
                     Creator = new
                     {
-                        Id = meeting.Creator.Id,
+                        meeting.Creator.Id,
                         FirstName = meeting.Creator.Profile?.FirstName,
                         LastName = meeting.Creator.Profile?.LastName,
                         ProfilePictureUrl = meeting.Creator.Profile?.PhotoUrl
@@ -343,27 +343,60 @@ namespace BeerParty.Web.Controllers
 
             var userId = long.Parse(userIdClaim.Value);
             bool isCreator = meeting.CreatorId == userId;
-            bool isCoAuthor = meeting.CoAuthorId == userId;
-            bool isAdmin = User.IsInRole("Admin");
+            bool isCoAuthor = meeting.CoAuthorId == userId; // Проверяем, является ли пользователь соавтором
 
-            if (!isCreator && !isCoAuthor && !isAdmin)
+            if (!isCreator && !isCoAuthor) // Позволяем обновление только создателям и соавторам
             {
-                return Forbid();
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Вы не создатель и не соавтор встречи." });
             }
 
-            // Обновляем поля встречи с использованием тернарного оператора
-            meeting.Title = !string.IsNullOrEmpty(meetingUpdateDto.Title) ? meetingUpdateDto.Title : meeting.Title;
-            meeting.MeetingTime = meetingUpdateDto.MeetingTime != default ? meetingUpdateDto.MeetingTime : meeting.MeetingTime;
-            meeting.Location = !string.IsNullOrEmpty(meetingUpdateDto.Location) ? meetingUpdateDto.Location : meeting.Location;
-            meeting.Description = !string.IsNullOrEmpty(meetingUpdateDto.Description) ? meetingUpdateDto.Description : meeting.Description;
-            meeting.IsPublic = meetingUpdateDto.IsPublic; // Обновляем булевое значение напрямую
+            // Обновляем поля встречи только если они были переданы
+            if (!string.IsNullOrEmpty(meetingUpdateDto.Title))
+            {
+                meeting.Title = meetingUpdateDto.Title;
+            }
 
-            meeting.ParticipantLimit = meetingUpdateDto.ParticipantLimit.HasValue ? meetingUpdateDto.ParticipantLimit.Value : meeting.ParticipantLimit;
+            if (meetingUpdateDto.MeetingTime.HasValue) // Проверяем, передано ли время встречи
+            {
+                meeting.MeetingTime = meetingUpdateDto.MeetingTime.Value;
+            }
+
+            if (!string.IsNullOrEmpty(meetingUpdateDto.Location))
+            {
+                meeting.Location = meetingUpdateDto.Location;
+            }
+
+            if (!string.IsNullOrEmpty(meetingUpdateDto.Description))
+            {
+                meeting.Description = meetingUpdateDto.Description;
+            }
+
+            // Обновляем булевое значение только если оно было передано
+            if (meetingUpdateDto.IsPublic.HasValue) // Проверяем, было ли передано значение
+            {
+                meeting.IsPublic = meetingUpdateDto.IsPublic.Value;
+            }
+
+            if (meetingUpdateDto.ParticipantLimit.HasValue)
+            {
+                meeting.ParticipantLimit = meetingUpdateDto.ParticipantLimit.Value;
+            }
 
             // Обновление широты, долготы и радиуса
-            meeting.Latitude = meetingUpdateDto.Latitude.HasValue ? meetingUpdateDto.Latitude.Value : meeting.Latitude;
-            meeting.Longitude = meetingUpdateDto.Longitude.HasValue ? meetingUpdateDto.Longitude.Value : meeting.Longitude;
-            meeting.Radius = meetingUpdateDto.Radius.HasValue ? meetingUpdateDto.Radius.Value : meeting.Radius;
+            if (meetingUpdateDto.Latitude.HasValue)
+            {
+                meeting.Latitude = meetingUpdateDto.Latitude.Value;
+            }
+
+            if (meetingUpdateDto.Longitude.HasValue)
+            {
+                meeting.Longitude = meetingUpdateDto.Longitude.Value;
+            }
+
+            if (meetingUpdateDto.Radius.HasValue)
+            {
+                meeting.Radius = meetingUpdateDto.Radius.Value;
+            }
 
             // Обработка загрузки фотографии для встречи
             if (meetingUpdateDto.Photo != null && meetingUpdateDto.Photo.Length > 0)
@@ -407,6 +440,9 @@ namespace BeerParty.Web.Controllers
         }
 
 
+
+
+
         // Присоединение к публичной встрече
         [HttpPost("{meetingId}/join")]
         public async Task<IActionResult> JoinMeeting(long meetingId)
@@ -446,39 +482,84 @@ namespace BeerParty.Web.Controllers
 
             return Ok(new { message = "Вы успешно присоединились к встрече.", participant = newParticipant });
         }
-        [HttpPost("like/{feedbackId}")]
-        public async Task<IActionResult> ToggleLike(long feedbackId)
+        [HttpPost("like/review/{meetingReviewId}")]
+        public async Task<IActionResult> ToggleReviewLike(long meetingReviewId)
         {
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userId = long.TryParse(userIdString, out var parsedUserId) ? parsedUserId : (long?)null;
-
-            if (userId == null)
+            if (!long.TryParse(userIdString, out var userId))
             {
                 return Unauthorized("Пользователь не авторизован");
             }
 
-            var like = await _context.Likes
-                .SingleOrDefaultAsync(l => l.UserId == userId && l.MeetingReviewId == feedbackId);
+            // Проверяем, существует ли отзыв с указанным ID
+            var reviewExists = await _context.MeetingReviews.AnyAsync(r => r.Id == meetingReviewId);
+            if (!reviewExists)
+            {
+                return NotFound("Отзыв не найден");
+            }
+
+            // Проверяем наличие лайка для данного пользователя и отзыва
+            var like = await _context.MeetingReviewLikes
+                .SingleOrDefaultAsync(l => l.UserId == userId && l.MeetingReviewId == meetingReviewId);
 
             if (like != null)
             {
-                // Удаляем лайк
-                _context.Likes.Remove(like);
+                // Удаляем лайк, если он существует
+                _context.MeetingReviewLikes.Remove(like);
+                await _context.SaveChangesAsync();
+                return Ok("Лайк удален");
             }
             else
             {
-                // Добавляем лайк
-                var newLike = new Like { UserId = userId.Value, MeetingReviewId = feedbackId };
-                await _context.Likes.AddAsync(newLike);
+                // Добавляем новый лайк
+                var newLike = new MeetingReviewLike { UserId = userId, MeetingReviewId = meetingReviewId };
+                await _context.MeetingReviewLikes.AddAsync(newLike);
+                await _context.SaveChangesAsync();
+                return Ok("Лайк добавлен");
             }
-
-            await _context.SaveChangesAsync();
-            return Ok("Изменения сохранены");
         }
+
         [HttpPost("like/meeting/{meetingId}")]
         public async Task<IActionResult> ToggleMeetingLike(long meetingId)
         {
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!long.TryParse(userIdString, out var userId))
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
+            // Проверяем, существует ли встреча с указанным ID
+            var meetingExists = await _context.Meetings.AnyAsync(m => m.Id == meetingId);
+            if (!meetingExists)
+            {
+                return NotFound("Встреча не найдена");
+            }
+
+            // Проверяем наличие лайка для данного пользователя и встречи
+            var like = await _context.MeetingLikes
+                .SingleOrDefaultAsync(l => l.UserId == userId && l.MeetingId == meetingId);
+
+            if (like != null)
+            {
+                // Удаляем лайк, если он существует
+                _context.MeetingLikes.Remove(like);
+                await _context.SaveChangesAsync();
+                return Ok("Лайк удален");
+            }
+            else
+            {
+                // Добавляем новый лайк
+                var newLike = new MeetingLike { UserId = userId, MeetingId = meetingId };
+                await _context.MeetingLikes.AddAsync(newLike);
+                await _context.SaveChangesAsync();
+                return Ok("Лайк добавлен");
+            }
+        }
+        [HttpGet("get-liked-meetings")]
+        public async Task<IActionResult> GetLikedMeetings()
+        {
+            // Извлекаем userId из токена
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userId = long.TryParse(userIdString, out var parsedUserId) ? parsedUserId : (long?)null;
 
             if (userId == null)
@@ -486,45 +567,41 @@ namespace BeerParty.Web.Controllers
                 return Unauthorized("Пользователь не авторизован");
             }
 
-            var like = await _context.Likes
-                .SingleOrDefaultAsync(l => l.UserId == userId && l.MeetingId == meetingId);
+            // Получаем встречи, которые пользователь лайкнул
+            var likedMeetings = await _context.MeetingLikes
+                .Where(l => l.UserId == userId)
+                .Include(l => l.Meeting) // Сначала загружаем Meeting
+                    .ThenInclude(m => m.Creator) // Затем загружаем создателя встречи
+                .Include(l => l.Meeting)
+                    .ThenInclude(m => m.Participants) // Затем загружаем участников встречи
+                .Select(l => l.Meeting) // После загрузки включаем выборку Meeting
+                .ToListAsync();
 
-            if (like != null)
-            {
-                // Удаляем лайк
-                _context.Likes.Remove(like);
-            }
-            else
-            {
-                // Добавляем лайк
-                var newLike = new Like { UserId = userId.Value, MeetingId = meetingId };
-                await _context.Likes.AddAsync(newLike);
-            }
-
-            await _context.SaveChangesAsync();
-            return Ok("Изменения сохранены");
+            return Ok(likedMeetings);
         }
+
 
         [HttpGet("recommended")]
         public async Task<IActionResult> GetRecommendedMeetings(int page = 0, int pageSize = 10)
         {
-            var meetings = await GetRecommendedMeetingsAsync(pageSize);
+            var meetings = await GetRecommendedMeetingsAsync(page, pageSize);
             return Ok(meetings);
         }
 
         // Приватный метод для получения рекомендованных встреч
-        private async Task<List<Meeting>> GetRecommendedMeetingsAsync(int count)
+        private async Task<List<Meeting>> GetRecommendedMeetingsAsync(int page, int pageSize)
         {
             var meetings = await _context.Meetings
                 .Select(m => new
                 {
                     Meeting = m,
-                    LikesCount = m.Likes.Count(),
-                    ReviewsCount = m.Reviews.Count(),
-                    AverageRating = m.Reviews.Any() ? m.Reviews.Average(r => r.Rating) : 0 // Средний рейтинг
+                    LikesCount = m.MeetingLikes.Count(), // Используем MeetingLikes
+                    ReviewsCount = m.MeetingReviews.Count(), // Используем MeetingReviews
+                    AverageRating = m.MeetingReviews.Any() ? m.MeetingReviews.Average(r => r.Rating) : 0 // Средний рейтинг
                 })
                 .OrderByDescending(m => m.LikesCount + m.ReviewsCount + (m.AverageRating * 10)) // Сортировка по количеству лайков, отзывов и среднему рейтингу
-                .Take(count)
+                .Skip(page * pageSize) // Пропускаем встречи для пагинации
+                .Take(pageSize) // Ограничиваем количество возвращаемых встреч
                 .ToListAsync();
 
             return meetings.Select(m => m.Meeting).ToList();
@@ -534,15 +611,13 @@ namespace BeerParty.Web.Controllers
         public async Task<IActionResult> GetPersonalRecommendations(int page = 0, int pageSize = 10)
         {
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userId = long.TryParse(userIdString, out var parsedUserId) ? parsedUserId : (long?)null;
-
-            if (userId == null)
+            if (!long.TryParse(userIdString, out var userId))
             {
                 return Unauthorized("Пользователь не авторизован");
             }
 
             // Получаем встречи, которые пользователь отметил как "нравится"
-            var userLikes = await _context.Likes
+            var userLikes = await _context.MeetingLikes // Используем MeetingLikes
                 .Where(l => l.UserId == userId)
                 .Select(l => l.MeetingId)
                 .ToListAsync();
@@ -560,10 +635,10 @@ namespace BeerParty.Web.Controllers
 
             return Ok(recommendedMeetings);
         }
-      
+
 
         // GET: api/MeetingReview/{id}
-     
+
 
         // POST: api/MeetingReview
         [HttpPost("CreateMeetingReview")]
@@ -607,9 +682,13 @@ namespace BeerParty.Web.Controllers
                 .Include(mr => mr.User)
                 .ToListAsync();
 
+            if (reviews == null || !reviews.Any())
+            {
+                return NotFound("Нет данных о встречах.");
+            }
+
             return Ok(reviews);
         }
-
         // PUT: api/MeetingReview/{id}
         [HttpPut("UpdateMeetingReview")]
         public async Task<ActionResult<MeetingReview>> UpdateMeetingReview([FromQuery] UpdateReviewDto dto)
