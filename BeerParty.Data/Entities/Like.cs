@@ -6,11 +6,15 @@ using System.Threading.Tasks;
 
 namespace BeerParty.Data.Entities
 {
-    public class Like:BaseEntity
+    public class Like : BaseEntity
     {
-        public long MeetingId { get; set; }
-        public virtual Meeting Meeting { get; set; }
-        public long UserId { get; set; } // Убедитесь, что это свойство сущес
+        public long UserId { get; set; }
         public User User { get; set; }
+
+        public long MeetingReviewId { get; set; }
+        public MeetingReview MeetingReview { get; set; }
+        public long MeetingId { get; set; } // Добавлено свойство для встречи
+
+        public Meeting Meeting { get; set; }
     }
 }

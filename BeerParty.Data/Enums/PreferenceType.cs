@@ -9,8 +9,8 @@ namespace BeerParty.Data.Enums
     public enum PreferenceType
     {
         Friends,
-        girl,
-        boyfriend,
-        Lover,
+        Girl,
+        Boyfriend,
+        Lover
     }
 }

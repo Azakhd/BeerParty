@@ -14,8 +14,8 @@ namespace BeerParty.Data.Entities
         public ICollection<Friend>? Friends { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public string Bio { get; set; }
-        public string Location { get; set; }
+        public string? Bio { get; set; }
+        public string? Location { get; set; }
 
         [NotMapped]
         public IFormFile? Photo { get; set; }

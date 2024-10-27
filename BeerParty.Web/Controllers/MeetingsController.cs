@@ -446,9 +446,37 @@ namespace BeerParty.Web.Controllers
 
             return Ok(new { message = "Вы успешно присоединились к встрече.", participant = newParticipant });
         }
-        [Authorize]
-        [HttpPost("like")]
-        public async Task<IActionResult> ToggleLike(long meetingId)
+        [HttpPost("like/{feedbackId}")]
+        public async Task<IActionResult> ToggleLike(long feedbackId)
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = long.TryParse(userIdString, out var parsedUserId) ? parsedUserId : (long?)null;
+
+            if (userId == null)
+            {
+                return Unauthorized("Пользователь не авторизован");
+            }
+
+            var like = await _context.Likes
+                .SingleOrDefaultAsync(l => l.UserId == userId && l.MeetingReviewId == feedbackId);
+
+            if (like != null)
+            {
+                // Удаляем лайк
+                _context.Likes.Remove(like);
+            }
+            else
+            {
+                // Добавляем лайк
+                var newLike = new Like { UserId = userId.Value, MeetingReviewId = feedbackId };
+                await _context.Likes.AddAsync(newLike);
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok("Изменения сохранены");
+        }
+        [HttpPost("like/meeting/{meetingId}")]
+        public async Task<IActionResult> ToggleMeetingLike(long meetingId)
         {
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userId = long.TryParse(userIdString, out var parsedUserId) ? parsedUserId : (long?)null;
@@ -477,32 +505,30 @@ namespace BeerParty.Web.Controllers
             return Ok("Изменения сохранены");
         }
 
-        [HttpGet("recommended")] // Это делает его API-эндпоинтом
+        [HttpGet("recommended")]
         public async Task<IActionResult> GetRecommendedMeetings(int page = 0, int pageSize = 10)
         {
             var meetings = await GetRecommendedMeetingsAsync(pageSize);
             return Ok(meetings);
         }
 
-        // Если вы хотите, чтобы этот метод оставался приватным, переименуйте его, например, так:
+        // Приватный метод для получения рекомендованных встреч
         private async Task<List<Meeting>> GetRecommendedMeetingsAsync(int count)
         {
-            // Получаем встречи и сортируем их по количеству лайков и отзывов
             var meetings = await _context.Meetings
                 .Select(m => new
                 {
                     Meeting = m,
                     LikesCount = m.Likes.Count(),
-                    ReviewsCount = m.Reviews.Count()
+                    ReviewsCount = m.Reviews.Count(),
+                    AverageRating = m.Reviews.Any() ? m.Reviews.Average(r => r.Rating) : 0 // Средний рейтинг
                 })
-                .OrderByDescending(m => m.LikesCount + m.ReviewsCount) // Сортировка по количеству лайков и отзывов
-                .Take(count) // Ограничиваем количество возвращаемых встреч
-                .ToListAsync(); // Выполняем запрос асинхронно
+                .OrderByDescending(m => m.LikesCount + m.ReviewsCount + (m.AverageRating * 10)) // Сортировка по количеству лайков, отзывов и среднему рейтингу
+                .Take(count)
+                .ToListAsync();
 
-            // Преобразуем результат в список встреч
-            return meetings.Select(m => m.Meeting).ToList(); // Здесь возвращаем Meeting
+            return meetings.Select(m => m.Meeting).ToList();
         }
-
 
         [HttpGet("personal-recommendations")]
         public async Task<IActionResult> GetPersonalRecommendations(int page = 0, int pageSize = 10)
@@ -533,6 +559,103 @@ namespace BeerParty.Web.Controllers
                 .ToListAsync();
 
             return Ok(recommendedMeetings);
+        }
+      
+
+        // GET: api/MeetingReview/{id}
+     
+
+        // POST: api/MeetingReview
+        [HttpPost("CreateMeetingReview")]
+        public async Task<ActionResult<MeetingReview>> CreateMeetingReview([FromQuery] AddReviewDto dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var review = new MeetingReview
+            {
+                MeetingId = dto.MeetingId,
+                UserId = long.Parse(userId), 
+                Rating = dto.Rating,
+                Comment = dto.Comment
+            };
+
+            _context.MeetingReviews.Add(review);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetMeetingReview), new { id = review.Id }, review);
+        }
+
+        [HttpGet("MeetingReview/{id}")]
+        public async Task<ActionResult<MeetingReview>> GetMeetingReview(long id)
+        {
+            var review = await _context.MeetingReviews
+                .Include(mr => mr.Meeting)
+                .Include(mr => mr.User)
+                .FirstOrDefaultAsync(mr => mr.Id == id);
+
+            if (review == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(review);
+        }
+        [HttpGet("AllMeetingReview")]
+        public async Task<ActionResult<IEnumerable<MeetingReview>>> GetMeetingReviews()
+        {
+            var reviews = await _context.MeetingReviews
+                .Include(mr => mr.Meeting)
+                .Include(mr => mr.User)
+                .ToListAsync();
+
+            return Ok(reviews);
+        }
+
+        // PUT: api/MeetingReview/{id}
+        [HttpPut("MeetingReview{id}")]
+        public async Task<IActionResult> UpdateMeetingReview([FromQuery] long id, MeetingReview review)
+        {
+            if (id != review.Id)
+            {
+                return BadRequest("Идентификаторы не совпадают.");
+            }
+
+            _context.Entry(review).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!MeetingReviewExists(id))
+                {
+                    return NotFound("Отзыв не найден.");
+                }
+                throw; // Пробрасываем исключение, если есть проблемы с обновлением
+            }
+
+            return NoContent();
+        }
+
+        // DELETE: api/MeetingReview/{id}
+        [HttpDelete("MeetingReview{id}")]
+        public async Task<IActionResult> DeleteMeetingReview(long id)
+        {
+            var review = await _context.MeetingReviews.FindAsync(id);
+            if (review == null)
+            {
+                return NotFound();
+            }
+
+            _context.MeetingReviews.Remove(review);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool MeetingReviewExists(long id)
+        {
+            return _context.MeetingReviews.Any(e => e.Id == id);
         }
 
     }

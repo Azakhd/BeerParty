@@ -12,13 +12,14 @@ namespace BeerParty.BL.Dto
     string? FirstName,
     string? LastName,
     List<long>? InterestIds,
-    double Height,
+    double? Height,
     IFormFile? Photo,
-    string Bio,
-    string Location,
+    string? Bio,
+    string? Location,
     DateTime DateOfBirth,
     Gender? Gender,
-    bool RemovePhoto
+    bool RemovePhoto,
+   PreferenceType? Preference
 );
 
 

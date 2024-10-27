@@ -23,8 +23,8 @@ namespace BeerParty.Data
         public DbSet<MessageEntity> Messages { get; set; }
         public DbSet<Meeting> Meetings { get; set; }
         public DbSet<MeetingReview> MeetingReviews { get; set; }
-        public DbSet<MeetingParticipant> MeetingParticipants { get; set; }
         public DbSet<Like> Likes { get; set; }
+        public DbSet<MeetingParticipant> MeetingParticipants { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -137,9 +137,9 @@ namespace BeerParty.Data
 
 
             modelBuilder.Entity<Like>()
-                .HasOne(l => l.Meeting)
+                .HasOne(l => l.MeetingReview)
                 .WithMany(m => m.Likes)
-                .HasForeignKey(l => l.MeetingId)
+                .HasForeignKey(l => l.MeetingReviewId)
                 .OnDelete(DeleteBehavior.Cascade); // Опционально
         }
     }

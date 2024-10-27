@@ -8,6 +8,7 @@ namespace BeerParty.Data.Entities
 {
     public class MeetingReview : BaseEntity
     {
+
         public long MeetingId { get; set; }
         public Meeting Meeting { get; set; }
 
@@ -16,5 +17,8 @@ namespace BeerParty.Data.Entities
 
         public int Rating { get; set; } // Оценка от 1 до 5
         public string? Comment { get; set; } // Комментарий к встрече
+
+        // Новый свойство для хранения лайков
+        public ICollection<Like> Likes { get; set; } = new List<Like>();
     }
 }

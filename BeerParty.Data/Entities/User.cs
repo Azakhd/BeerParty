@@ -1,5 +1,6 @@
 ﻿using BeerParty.Data.Enums;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace BeerParty.Data.Entities
 {
@@ -18,6 +19,7 @@ namespace BeerParty.Data.Entities
         [Required]
         public DateTime CreatedAt { get; set; }
         public List<Role> Roles { get; set; } = new List<Role>();
+        [JsonIgnore]
         public virtual Profile Profile { get; set; }
         public virtual ICollection<MeetingReview> MeetingReviews { get; set; }
 

@@ -7,8 +7,17 @@ using System.Threading.Tasks;
 
 namespace BeerParty.BL.Dto
 {
-    public record UserSearchDto(string? Name, int? MinAge, int? MaxAge, Gender? Gender,
-        List<long>? Interests, double? MinHeight, double? MaxHeight,PreferenceType Preference);
-    
-   
+    public record UserSearchDto(
+    string? UserName,
+    string? ProfileName,
+    int? MinAge,
+    int? MaxAge,
+    Gender? Gender,
+    List<long>? Interests,
+    double? MinHeight,
+    double? MaxHeight,
+    PreferenceType? Preference
+);
+
+
 }
