@@ -130,17 +130,26 @@ namespace BeerParty.Data
                 .HasForeignKey(mp => mp.UserId); // Указываем внешний ключ
 
             modelBuilder.Entity<Like>()
-            .HasOne(l => l.User)
-            .WithMany(u => u.Likes)
-            .HasForeignKey(l => l.UserId)
-            .OnDelete(DeleteBehavior.Cascade); // Опционально
-
+             .HasKey(l => l.Id); // Убедитесь, что у вас есть первичный ключ
 
             modelBuilder.Entity<Like>()
-                .HasOne(l => l.MeetingReview)
-                .WithMany(m => m.Likes)
-                .HasForeignKey(l => l.MeetingReviewId)
-                .OnDelete(DeleteBehavior.Cascade); // Опционально
+        .HasOne(l => l.User)
+        .WithMany() // Нет навигационного свойства для Likes в User
+        .HasForeignKey(l => l.UserId)
+        .OnDelete(DeleteBehavior.Cascade); // Удаление пользователя приведет к удалению связанных лайков
+
+            modelBuilder.Entity<Like>()
+      .HasOne(l => l.MeetingReview)
+      .WithMany(mr => mr.Likes)
+      .HasForeignKey(l => l.MeetingReviewId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+            // Настройка связи между Like и Meeting
+            modelBuilder.Entity<Like>()
+                .HasOne(l => l.Meeting)
+                .WithMany() // Нет навигационного свойства для Likes в Meeting
+                .HasForeignKey(l => l.MeetingId)
+                .OnDelete(DeleteBehavior.Cascade); // Удаление встречи приведет к удалению связанных лайков
         }
     }
 }

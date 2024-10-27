@@ -611,31 +611,38 @@ namespace BeerParty.Web.Controllers
         }
 
         // PUT: api/MeetingReview/{id}
-        [HttpPut("MeetingReview{id}")]
-        public async Task<IActionResult> UpdateMeetingReview([FromQuery] long id, MeetingReview review)
+        [HttpPut("UpdateMeetingReview")]
+        public async Task<ActionResult<MeetingReview>> UpdateMeetingReview([FromQuery] UpdateReviewDto dto)
         {
-            if (id != review.Id)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Находим отзыв по ID
+            var review = await _context.MeetingReviews
+                .SingleOrDefaultAsync(r => r.Id == dto.reviewId && r.UserId == long.Parse(userId));
+
+            if (review == null)
             {
-                return BadRequest("Идентификаторы не совпадают.");
+                return NotFound("Отзыв не найден или у вас нет прав для его изменения.");
             }
 
-            _context.Entry(review).State = EntityState.Modified;
-
-            try
+            // Обновляем только те поля, которые были переданы
+            if (dto.Rating.HasValue)
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!MeetingReviewExists(id))
-                {
-                    return NotFound("Отзыв не найден.");
-                }
-                throw; // Пробрасываем исключение, если есть проблемы с обновлением
+                review.Rating = dto.Rating.Value;
             }
 
-            return NoContent();
+            if (!string.IsNullOrEmpty(dto.Comment))
+            {
+                review.Comment = dto.Comment;
+            }
+
+            // Сохраняем изменения
+            await _context.SaveChangesAsync();
+
+            return Ok(review);
         }
+
+
 
         // DELETE: api/MeetingReview/{id}
         [HttpDelete("MeetingReview{id}")]
