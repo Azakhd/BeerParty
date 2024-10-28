@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using BeerParty.Data.Enums;
 
 namespace BeerParty.Web.Controllers
 {
@@ -19,19 +20,12 @@ namespace BeerParty.Web.Controllers
             _context = context;
         }
 
-        [HttpPost("add-friend/{friendId}")]
-        public async Task<IActionResult> AddFriend(long friendId)
+        [HttpPost("add-friend-request/{friendId}")]
+        public async Task<IActionResult> AddFriendRequest(long friendId)
         {
-            // Извлечение идентификатора текущего пользователя из клейма
             var currentUserIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (string.IsNullOrEmpty(currentUserIdString))
-            {
-                return BadRequest("User ID not found in claims.");
-            }
-
-            // Преобразование идентификатора в long
-            if (!long.TryParse(currentUserIdString, out long currentUserId))
+            if (string.IsNullOrEmpty(currentUserIdString) || !long.TryParse(currentUserIdString, out long currentUserId))
             {
                 return BadRequest("Invalid user ID.");
             }
@@ -42,59 +36,75 @@ namespace BeerParty.Web.Controllers
                 return NotFound("Friend not found.");
             }
 
-            var existingFriendship = await _context.Friends
-                .AnyAsync(f => f.UserId == currentUserId && f.FriendId == friendId);
+            var existingFriendRequest = await _context.Friends
+                .AnyAsync(f => (f.UserId == currentUserId && f.FriendId == friendId) ||
+                               (f.UserId == friendId && f.FriendId == currentUserId));
 
-            if (existingFriendship)
+            if (existingFriendRequest)
             {
-                return BadRequest("You are already friends.");
+                return BadRequest("Friend request already exists.");
             }
 
-            var newFriendship = new Friend
+            var friendRequest = new Friend
             {
                 UserId = currentUserId,
-                FriendId = friendId
+                FriendId = friendId,
+                Status = FriendshipStatus.Pending
             };
 
-            _context.Friends.Add(newFriendship);
+            _context.Friends.Add(friendRequest);
             await _context.SaveChangesAsync();
 
-            return Ok("Friend added successfully.");
+            return Ok("Friend request sent successfully.");
+        }
+
+        [HttpPost("respond-to-friend-request/{friendId}")]
+        public async Task<IActionResult> RespondToFriendRequest(long friendId, [FromQuery] bool accept)
+        {
+            var currentUserIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(currentUserIdString) || !long.TryParse(currentUserIdString, out long currentUserId))
+            {
+                return BadRequest("Invalid user ID.");
+            }
+
+            var friendRequest = await _context.Friends
+                .FirstOrDefaultAsync(f => f.UserId == friendId && f.FriendId == currentUserId && f.Status == FriendshipStatus.Pending);
+
+            if (friendRequest == null)
+            {
+                return NotFound("Friend request not found.");
+            }
+
+            friendRequest.Status = accept ? FriendshipStatus.Accepted : FriendshipStatus.Rejected;
+            await _context.SaveChangesAsync();
+
+            return Ok(accept ? "Friend request accepted." : "Friend request rejected.");
         }
 
 
         [HttpGet("list")]
         public async Task<IActionResult> GetFriends()
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
-            {
-                return Unauthorized("User not authorized");
-            }
-
-            if (!long.TryParse(userId, out long currentUserId))
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long currentUserId))
             {
                 return BadRequest("Invalid user ID.");
             }
 
-            var currentUser = await _context.Users.SingleOrDefaultAsync(u => u.Id == currentUserId);
-            if (currentUser == null)
-            {
-                return NotFound("User not found");
-            }
-
             var friends = await _context.Friends
-                .Where(f => f.UserId == currentUserId)
-                .Include(f => f.FriendUser)
+                .Where(f => (f.UserId == currentUserId || f.FriendId == currentUserId) && f.Status == FriendshipStatus.Accepted)
                 .Select(f => new
                 {
-                    f.FriendUser!.Name,
-                    f.FriendUser.Email
+                    FriendId = f.UserId == currentUserId ? f.FriendId : f.UserId,
+                    FriendName = f.UserId == currentUserId ? f.FriendUser!.Name : f.User.Name,
+                    FriendEmail = f.UserId == currentUserId ? f.FriendUser!.Email : f.User.Email
                 })
                 .ToListAsync();
 
             return Ok(friends);
         }
+
     }
 
 
