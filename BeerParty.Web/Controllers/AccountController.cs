@@ -27,6 +27,7 @@ namespace BeerParty.Web.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterUserDto model)
         {
+            // Проверка на валидность
             if (string.IsNullOrEmpty(model.Name) || model.Name.Length < 2 || model.Name.Length > 50)
             {
                 return BadRequest("Имя должно быть от 2 до 50 символов.");
@@ -54,14 +55,34 @@ namespace BeerParty.Web.Controllers
             {
                 Name = model.Name,
                 Email = model.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password) // Хешируем пароль
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
+                Role = Role.User // Установка роли по умолчанию
             };
 
             _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(); // Сохранение пользователя
+
+            // Создание профиля с заполненным только именем
+            var profile = new Profile
+            {
+                UserId = user.Id,
+                FirstName = model.Name, // Заполняем имя
+                Bio = null, // Устанавливаем Bio как null (или уберите это поле, если оно не нужно)
+                PhotoUrl = null,
+                LastName = null,
+                Location = null,
+                Height = null,
+                DateOfBirth = default, // Или укажите значение по умолчанию
+                Gender = Gender.Other, // Установите значение по умолчанию, если необходимо
+                LookingFor = null
+            };
+
+            _context.Profiles.Add(profile);
+            await _context.SaveChangesAsync(); // Сохранение профиля
 
             return Ok(new { message = "Регистрация успешна", userId = user.Id });
         }
+
 
 
         [HttpPost("login")]
@@ -88,7 +109,7 @@ namespace BeerParty.Web.Controllers
         new Claim(ClaimTypes.Name, user.Name!), // Имя пользователя
         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // ID пользователя
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        new Claim(ClaimTypes.Role, string.Join(", ", user.Roles)) // Роли пользователя
+        new Claim(ClaimTypes.Role, string.Join(", ", user.Role)) // Роли пользователя
     };
 
             // Отладочная информация
@@ -132,12 +153,13 @@ namespace BeerParty.Web.Controllers
                     u.Id,
                     u.Name,
                     u.Email,
-                    Role = string.Join(", ", u.Roles) // Преобразование списка ролей в строку
+                    Role = u.Role.ToString() // Преобразование одиночного значения Role в строку
                 })
                 .ToListAsync();
 
             return Ok(users);
         }
+
 
         [Authorize(Roles = "Admin")]
         [HttpPut("update-role/{userId}")]
@@ -151,17 +173,16 @@ namespace BeerParty.Web.Controllers
             }
 
             // Поиск пользователя, роль которого нужно изменить
-            var user = await _context.Users.Include(u => u.Roles).SingleOrDefaultAsync(u => u.Id == userId);
+            var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == userId);
             if (user == null)
             {
                 return NotFound("Пользователь не найден.");
             }
 
-            // Изменение роли пользователя
-            if (!user.Roles.Contains(newRole))
+            // Изменение роли пользователя, если новая роль отличается от текущей
+            if (user.Role != newRole)
             {
-                user.Roles.Clear(); // Очистим предыдущие роли, если разрешена только одна роль
-                user.Roles.Add(newRole); // Добавим новую роль
+                user.Role = newRole; // Присваиваем новую роль
             }
 
             // Сохранение изменений

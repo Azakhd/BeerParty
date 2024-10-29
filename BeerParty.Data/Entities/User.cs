@@ -18,7 +18,7 @@ namespace BeerParty.Data.Entities
         public ICollection<UserInterest> UserInterests { get; set; } = new List<UserInterest>();
         [Required]
         public DateTime CreatedAt { get; set; }
-        public List<Role> Roles { get; set; } = new List<Role>();
+        public Role Role { get; set; } = Role.User;
         [JsonIgnore]
         public virtual Profile Profile { get; set; }
         public virtual ICollection<MeetingReview> MeetingReviews { get; set; }

@@ -12,8 +12,8 @@ namespace BeerParty.Data.Entities
         public User ?User { get; set; } // Связь с пользователем
         public string? PhotoUrl { get; set; }
         public ICollection<Friend>? Friends { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
         public string? Bio { get; set; }
         public string? Location { get; set; }
 
