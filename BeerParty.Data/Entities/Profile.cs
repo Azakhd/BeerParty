@@ -29,6 +29,12 @@ namespace BeerParty.Data.Entities
         public Gender Gender { get; set; }
         public PreferenceType? LookingFor { get; set; }
 
+        // Оценки, которые данный профиль оставляет другим профилям
+        public ICollection<ProfileInteraction>? GivenInteractions { get; set; }
+
+        // Оценки, которые данный профиль получает от других профилей
+        public ICollection<ProfileInteraction>? ReceivedInteractions { get; set; }
+
         private int? CalculateAge()
         {
             if (DateOfBirth == default) return null; // Если дата рождения не задана, возвращаем null
