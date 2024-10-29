@@ -20,6 +20,7 @@ namespace BeerParty.Data
         public DbSet<UserInterest> UserInterests { get; set; }
         public DbSet<Interest> Interests { get; set; }
         public DbSet<Profile> Profiles { get; set; }
+        public DbSet<ProfileInteraction> ProfileInteractions { get; set; }
         public DbSet<MessageEntity> Messages { get; set; }
         public DbSet<Meeting> Meetings { get; set; }
         public DbSet<MeetingReview> MeetingReviews { get; set; }
@@ -130,7 +131,19 @@ namespace BeerParty.Data
                 .WithMany() // У пользователя может быть много участников
                 .HasForeignKey(mp => mp.UserId); // Указываем внешний ключ
 
-    
+
+            modelBuilder.Entity<ProfileInteraction>()
+         .HasOne(pi => pi.FromProfile)
+         .WithMany(p => p.GivenInteractions)
+         .HasForeignKey(pi => pi.FromProfileId)
+         .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ProfileInteraction>()
+                .HasOne(pi => pi.ToProfile)
+                .WithMany(p => p.ReceivedInteractions)
+                .HasForeignKey(pi => pi.ToProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+
 
             modelBuilder.Entity<User>()
           .HasMany(u => u.MeetingLikes)
