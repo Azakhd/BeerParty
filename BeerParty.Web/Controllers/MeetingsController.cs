@@ -17,7 +17,7 @@ namespace BeerParty.Web.Controllers
             _context = context;
         }
 
-        // Создание новой встречи
+       
         [HttpPost("CreateMeeting")]
         public async Task<IActionResult> CreateMeeting([FromForm] CreateMeetingDto dto)
         {
@@ -31,7 +31,7 @@ namespace BeerParty.Web.Controllers
             var creatorId = long.Parse(creatorIdClaim.Value);
             var participants = new List<MeetingParticipant>();
 
-            // Проверяем существование пользователей
+            
             foreach (var participantId in dto.ParticipantIds)
             {
                 if (await _context.Users.AnyAsync(u => u.Id == participantId))
@@ -48,20 +48,20 @@ namespace BeerParty.Web.Controllers
                 }
             }
 
-            // Проверяем лимит участников
+           
             if (dto.ParticipantLimit.HasValue && dto.ParticipantLimit.Value < participants.Count)
             {
                 return BadRequest($"Количество участников превышает лимит в {dto.ParticipantLimit.Value}.");
             }
 
-            // Проверяем широту и долготу
+            
             if (!double.TryParse(dto.Latitude.ToString(), out double latitude) ||
                 !double.TryParse(dto.Longitude.ToString(), out double longitude))
             {
                 return BadRequest("Неверный формат широты или долготы.");
             }
 
-            // Проверка допустимых значений для широты и долготы
+            
             if (latitude < -90 || latitude > 90)
             {
                 return BadRequest("Широта должна быть в диапазоне от -90 до 90 градусов.");
@@ -115,14 +115,13 @@ namespace BeerParty.Web.Controllers
                     }
                     else
                     {
-                        // Устанавливаем значение по умолчанию или оставляем null
-                        meeting.PhotoUrl = "default_photo_url"; // Убедитесь, что это значение допустимо в вашей базе данных
+                       
+                        meeting.PhotoUrl = "default_photo_url"; 
                     }
 
                     _context.Meetings.Add(meeting);
                     await _context.SaveChangesAsync();
 
-                    // Сохранение участников встречи
                     foreach (var participant in participants)
                     {
                         participant.MeetingId = meeting.Id;
@@ -156,7 +155,7 @@ namespace BeerParty.Web.Controllers
                     m.Id,
                     m.Title,
                     m.Latitude,
-                    m.Longitude // Убедитесь, что у встреч есть координаты
+                    m.Longitude 
                 })
                 .ToListAsync();
 
@@ -166,7 +165,7 @@ namespace BeerParty.Web.Controllers
         [HttpGet("FindMeetings")]
         public async Task<IActionResult> FindMeetings(double latitude, double longitude, double radius)
         {
-            const double EarthRadius = 6371; // Радиус Земли в километрах
+            const double EarthRadius = 6371; 
 
             // Получаем ID пользователя из токена
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
@@ -197,7 +196,7 @@ namespace BeerParty.Web.Controllers
             return Ok(filteredMeetings);
         }
 
-        // Подтверждение участия в встрече
+        
         [HttpPost("{meetingId}/participants/confirm")]
         [Authorize]
         public async Task<IActionResult> ConfirmParticipation(long meetingId)
@@ -240,7 +239,7 @@ namespace BeerParty.Web.Controllers
 
 
 
-        // Получение информации о встрече
+       
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetMeeting(long id)
@@ -258,26 +257,25 @@ namespace BeerParty.Web.Controllers
                 if (meeting == null)
                     return NotFound();
 
-                // Получаем ID пользователя из токена
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
                 if (userIdClaim == null)
-                    return Unauthorized(); // Если не удается получить ID пользователя, возвращаем 401
+                    return Unauthorized();
 
                 var userId = long.Parse(userIdClaim.Value);
 
-                // Проверяем, является ли пользователь создателем встречи или администратором
+         
                 bool isCreator = meeting.CreatorId == userId;
-                bool isAdmin = User.IsInRole("Admin"); // Проверяем, является ли пользователь администратором
+                bool isAdmin = User.IsInRole("Admin"); 
 
-                // Проверяем, является ли встреча публичной, пользователь создатель или администратор
+               
                 bool isUserParticipant = meeting.IsPublic || isCreator || isAdmin || meeting.Participants.Any(p => p.UserId == userId);
 
                 if (!isUserParticipant)
                 {
-                    return Forbid(); // Запрещаем доступ, если встреча частная и пользователь не участник
+                    return Forbid(); 
                 }
 
-                // Формируем ответ с информацией о встрече
+                
                 var meetingInfo = new
                 {
                     meeting.Id,
@@ -287,7 +285,7 @@ namespace BeerParty.Web.Controllers
                     meeting.Description,
                     meeting.IsPublic,
                     meeting.Category,
-                    meeting.PhotoUrl, // Добавляем фото встречи в ответ
+                    meeting.PhotoUrl,
                     Creator = new
                     {
                         meeting.Creator.Id,
@@ -301,7 +299,7 @@ namespace BeerParty.Web.Controllers
                         FirstName = meeting.CoAuthor.Profile?.FirstName,
                         LastName = meeting.CoAuthor.Profile?.LastName,
                         ProfilePictureUrl = meeting.CoAuthor.Profile?.PhotoUrl
-                    } : null, // Если соавтор не задан, возвращаем null
+                    } : null, 
                     Participants = meeting.Participants.Select(p => new
                     {
                         Id = p.User?.Id,
@@ -315,8 +313,7 @@ namespace BeerParty.Web.Controllers
             }
             catch (Exception ex)
             {
-                // Логируем ошибку и возвращаем 500
-                // Logger.LogError(ex, "Error retrieving meeting with ID {MeetingId}", id);
+                
                 return StatusCode(500, "Произошла ошибка при получении встречи.");
             }
         }
@@ -343,20 +340,20 @@ namespace BeerParty.Web.Controllers
 
             var userId = long.Parse(userIdClaim.Value);
             bool isCreator = meeting.CreatorId == userId;
-            bool isCoAuthor = meeting.CoAuthorId == userId; // Проверяем, является ли пользователь соавтором
+            bool isCoAuthor = meeting.CoAuthorId == userId; 
 
-            if (!isCreator && !isCoAuthor) // Позволяем обновление только создателям и соавторам
+            if (!isCreator && !isCoAuthor) 
             {
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Вы не создатель и не соавтор встречи." });
             }
 
-            // Обновляем поля встречи только если они были переданы
+          
             if (!string.IsNullOrEmpty(meetingUpdateDto.Title))
             {
                 meeting.Title = meetingUpdateDto.Title;
             }
 
-            if (meetingUpdateDto.MeetingTime.HasValue) // Проверяем, передано ли время встречи
+            if (meetingUpdateDto.MeetingTime.HasValue) 
             {
                 meeting.MeetingTime = meetingUpdateDto.MeetingTime.Value;
             }
